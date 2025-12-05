@@ -3,7 +3,8 @@ import { Mail, Github, Twitter, Linkedin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { isExpoMode } from "@/lib/config";
-import logoImage from "@assets/generated_images/dubwise_ai_dubbing_logo.png";
+import logoImage from "@assets/generated_images/dubwise_logo_with_text.png";
+import logoIcon from "@assets/generated_images/dubwise_icon_favicon.png";
 
 const footerLinks = {
   product: [
@@ -58,8 +59,8 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12">
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <img src={logoImage} alt="DubWise Logo" className="h-9 w-9 rounded-lg" />
-              <span className="font-semibold">DubWise</span>
+              <img src={logoIcon} alt="DubWise Logo" className="h-8 w-8" />
+              <img src={logoImage} alt="DubWise" className="h-5" />
             </Link>
             <p className="text-sm text-muted-foreground mb-4">
               Transform any video into any language with AI-powered voice dubbing technology.

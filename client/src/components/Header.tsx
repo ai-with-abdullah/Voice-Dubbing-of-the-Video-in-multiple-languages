@@ -4,7 +4,8 @@ import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { isExpoMode } from "@/lib/config";
-import logoImage from "@assets/generated_images/dubwise_ai_dubbing_logo.png";
+import logoImage from "@assets/generated_images/dubwise_logo_with_text.png";
+import logoIcon from "@assets/generated_images/dubwise_icon_favicon.png";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -22,10 +23,8 @@ export function Header() {
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2" data-testid="link-logo">
-            <img src={logoImage} alt="DubWise Logo" className="h-9 w-9 rounded-lg" />
-            <span className="hidden font-semibold text-foreground sm:inline-block">
-              DubWise
-            </span>
+            <img src={logoIcon} alt="DubWise Logo" className="h-8 w-8" />
+            <img src={logoImage} alt="DubWise" className="hidden sm:block h-6" />
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
