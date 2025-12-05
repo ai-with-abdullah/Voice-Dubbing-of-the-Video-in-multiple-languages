@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Mic2, Mail, Github, Twitter, Linkedin } from "lucide-react";
+import { Mail, Github, Twitter, Linkedin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { isExpoMode } from "@/lib/config";
@@ -57,10 +57,8 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12">
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-                <Mic2 className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <span className="font-semibold">AI Video Dubbing</span>
+              <img src="/favicon.png" alt="Dubbio" className="h-9 w-9 rounded-lg" />
+              <span className="font-semibold">Dubbio</span>
             </Link>
             <p className="text-sm text-muted-foreground mb-4">
               Transform any video into any language with AI-powered voice dubbing technology.
@@ -138,7 +136,7 @@ export function Footer() {
 
         <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            2024 AI Video Dubbing. All rights reserved.
+            2024 Dubbio. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">Powered by</span>

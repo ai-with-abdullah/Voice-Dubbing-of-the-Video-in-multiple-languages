@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Mic2, Globe } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { isExpoMode } from "@/lib/config";
@@ -21,11 +21,9 @@ export function Header() {
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2" data-testid="link-logo">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <Mic2 className="h-5 w-5 text-primary-foreground" />
-            </div>
+            <img src="/favicon.png" alt="Dubbio" className="h-9 w-9 rounded-lg" />
             <span className="hidden font-semibold text-foreground sm:inline-block">
-              AI Video Dubbing
+              Dubbio
             </span>
           </Link>
 
