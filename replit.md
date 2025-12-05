@@ -1,7 +1,7 @@
-# DubWise - AI Video Voice Dubbing Platform
+# AI Video Voice Dubbing Platform
 
 ## Overview
-DubWise is a full-stack AI-powered video voice dubbing platform that converts video audio into any language supported by Google Translate. The system includes a modern React frontend with a Node.js/Express backend.
+A full-stack AI-powered video voice dubbing platform that converts video audio into any language supported by Google Translate. The system includes a modern React frontend with a Node.js/Express backend.
 
 ## Project Status
 - **Current State**: MVP Development Complete

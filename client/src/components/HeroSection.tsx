@@ -36,10 +36,10 @@ export function HeroSection() {
             </Badge>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight mb-6">
-              <span className="text-foreground">DubWise</span>
+              <span className="text-foreground">AI Video Voice</span>
               <br />
               <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                AI Voice Dubbing
+                Language Converter
               </span>
             </h1>
             

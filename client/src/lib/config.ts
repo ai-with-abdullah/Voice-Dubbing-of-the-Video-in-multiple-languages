@@ -1,7 +1,7 @@
 export const config = {
   expoMode: import.meta.env.VITE_EXPO_MODE === 'true',
   baseUrl: import.meta.env.VITE_BASE_URL || window.location.origin,
-  appName: 'DubWise',
+  appName: 'AI Video Voice Dubbing',
   appDescription: 'Convert any video to any language with AI-powered voice dubbing',
 };
 

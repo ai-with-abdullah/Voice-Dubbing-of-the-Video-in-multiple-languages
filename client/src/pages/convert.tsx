@@ -248,7 +248,7 @@ export default function Convert() {
                         <SocialShareButtons
                           url={window.location.href}
                           title="Check out my dubbed video!"
-                          description="Created with DubWise"
+                          description="Created with AI Video Voice Dubbing"
                         />
                       </CardContent>
                     </Card>
