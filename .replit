@@ -14,6 +14,14 @@ run = ["npm", "run", "start"]
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 42739
+externalPort = 3001
+
+[[ports]]
+localPort = 44343
+externalPort = 3000
+
 [env]
 PORT = "5000"
 
@@ -40,3 +48,9 @@ waitForPort = 5000
 
 [agent]
 integrations = ["javascript_paypal:1.0.0", "javascript_mem_db:1.0.0"]
+
+[userenv]
+
+[userenv.shared]
+VITE_EXPO_MODE = "true"
+VITE_BASE_URL = "https://ai-video-dubbing.replit.app"
