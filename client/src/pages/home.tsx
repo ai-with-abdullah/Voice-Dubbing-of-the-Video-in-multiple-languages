@@ -1,7 +1,6 @@
 import { HeroSection } from "@/components/HeroSection";
 import { PlatformLogos } from "@/components/PlatformLogos";
 import { FeaturesSection } from "@/components/FeaturesSection";
-import { PricingSection } from "@/components/PricingSection";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
@@ -13,7 +12,6 @@ export default function Home() {
         <HeroSection />
         <PlatformLogos />
         <FeaturesSection />
-        <PricingSection />
       </main>
       <Footer />
     </div>

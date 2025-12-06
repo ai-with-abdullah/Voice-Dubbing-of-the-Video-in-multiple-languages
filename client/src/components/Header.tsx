@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { Logo } from "./Logo";
 import { isExpoMode } from "@/lib/config";
+import { usePricingStore } from "@/lib/pricingState";
+import { PricingDialog } from "./PricingDialog";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -16,6 +18,7 @@ const navItems = [
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [location] = useLocation();
+  const { isOpen, openPricing, closePricing } = usePricingStore();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-lg">
@@ -36,15 +39,14 @@ export function Header() {
               </Link>
             ))}
             {!isExpoMode() && (
-              <Link href="/pricing">
-                <Button
-                  variant={location === "/pricing" ? "secondary" : "ghost"}
-                  size="sm"
-                  data-testid="link-nav-pricing"
-                >
-                  Pricing
-                </Button>
-              </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={openPricing}
+                data-testid="button-nav-pricing"
+              >
+                Pricing
+              </Button>
             )}
           </nav>
 
@@ -94,16 +96,17 @@ export function Header() {
               ))}
               {!isExpoMode() && (
                 <>
-                  <Link href="/pricing">
-                    <Button
-                      variant={location === "/pricing" ? "secondary" : "ghost"}
-                      className="w-full justify-start"
-                      onClick={() => setMobileMenuOpen(false)}
-                      data-testid="link-mobile-pricing"
-                    >
-                      Pricing
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      openPricing();
+                    }}
+                    data-testid="button-mobile-pricing"
+                  >
+                    Pricing
+                  </Button>
                   <div className="pt-2 mt-2 border-t border-border/40 flex flex-col gap-2">
                     <Link href="/login">
                       <Button
@@ -131,6 +134,8 @@ export function Header() {
           </nav>
         )}
       </div>
+      
+      <PricingDialog open={isOpen} onOpenChange={closePricing} />
     </header>
   );
 }

@@ -2,13 +2,14 @@ import { Link } from "wouter";
 import { Github, Twitter, Linkedin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { usePricingStore } from "@/lib/pricingState";
+import { isExpoMode } from "@/lib/config";
 
 const footerLinks = {
   product: [
     { label: "Features", href: "/#features" },
     { label: "Languages", href: "/languages" },
     { label: "Voice Studio", href: "/studio" },
-    { label: "Pricing", href: "/pricing" },
   ],
   resources: [
     { label: "Documentation", href: "/docs" },
@@ -30,6 +31,8 @@ const socialLinks = [
 ];
 
 export function Footer() {
+  const { openPricing } = usePricingStore();
+  
   return (
     <footer className="border-t border-border bg-card/50">
       <div className="mx-auto max-w-7xl px-4 lg:px-8 py-12 lg:py-16">

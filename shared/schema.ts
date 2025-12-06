@@ -238,7 +238,7 @@ export const conversionStatusSchema = z.enum([
 
 export type ConversionStatus = z.infer<typeof conversionStatusSchema>;
 
-export const subscriptionPlanSchema = z.enum(["free", "pro"]);
+export const subscriptionPlanSchema = z.enum(["free", "creator", "business"]);
 export type SubscriptionPlan = z.infer<typeof subscriptionPlanSchema>;
 
 export const pricingPlans = [
@@ -246,6 +246,7 @@ export const pricingPlans = [
     id: "free",
     name: "Free Demo",
     price: 0,
+    priceAnnual: 0,
     currency: "USD",
     features: [
       "30-second video limit",
@@ -261,10 +262,13 @@ export const pricingPlans = [
     },
   },
   {
-    id: "pro",
-    name: "Pro",
-    price: 10,
+    id: "creator",
+    name: "Creator Studio",
+    price: 12,
+    priceAnnual: 8,
+    annualTotal: 96,
     currency: "USD",
+    popular: true,
     features: [
       "10-minute video limit",
       "Unlimited conversions",
@@ -272,10 +276,34 @@ export const pricingPlans = [
       "SRT & VTT subtitle export",
       "Priority processing",
       "Social sharing tools",
-      "Priority support",
+      "Priority email support",
     ],
     limitations: {
       maxVideoLength: 600,
+      dailyConversions: -1,
+      voiceCloning: true,
+    },
+  },
+  {
+    id: "business",
+    name: "Business",
+    price: 39,
+    priceAnnual: 29,
+    annualTotal: 348,
+    currency: "USD",
+    features: [
+      "30-minute video limit",
+      "Unlimited conversions",
+      "Premium ElevenLabs voice cloning",
+      "Custom voice profiles",
+      "Batch processing",
+      "API access",
+      "SRT & VTT subtitle export",
+      "Dedicated account manager",
+      "White-label option",
+    ],
+    limitations: {
+      maxVideoLength: 1800,
       dailyConversions: -1,
       voiceCloning: true,
     },
