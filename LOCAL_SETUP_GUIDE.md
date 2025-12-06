@@ -270,6 +270,95 @@ SESSION_SECRET=expo-demo-2024
 
 ---
 
+## Demo Mode (EXPO_MODE) Settings
+
+The app has an "Expo Mode" that hides certain features like pricing and login for demo purposes.
+
+### Enable/Disable Expo Mode in Replit:
+
+1. Go to the **Secrets** tab in Replit (lock icon in the left sidebar)
+2. Add or edit these secrets:
+   - `EXPO_MODE` = `true` (for expo demo) or `false` (for production)
+   - `VITE_EXPO_MODE` = `true` (for expo demo) or `false` (for production)
+3. Restart the application
+
+### Enable/Disable Expo Mode Locally:
+
+Edit your `.env` file:
+
+```bash
+# For Expo Demo (hides pricing, login, signup):
+VITE_EXPO_MODE=true
+EXPO_MODE=true
+
+# For Production Mode (shows all features):
+VITE_EXPO_MODE=false
+EXPO_MODE=false
+```
+
+| Mode | Pricing | Login/Signup | Best For |
+|------|---------|--------------|----------|
+| Expo Mode (`true`) | Hidden | Hidden | Class demos, presentations |
+| Production Mode (`false`) | Visible | Visible | Real deployment |
+
+---
+
+## Setting Up Google OAuth Authentication (Optional)
+
+For real user authentication with Google Sign-In:
+
+### Step 1: Create Google Cloud Project
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing one
+3. Go to **APIs & Services** > **OAuth consent screen** and configure it
+
+### Step 2: Create OAuth Credentials
+1. Go to **APIs & Services** > **Credentials**
+2. Click **Create Credentials** > **OAuth client ID**
+3. Select **Web application**
+4. Add authorized redirect URIs:
+   - For local: `http://localhost:5000/api/auth/google/callback`
+   - For Replit: `https://your-repl-name.your-username.repl.co/api/auth/google/callback`
+5. Copy the **Client ID** and **Client Secret**
+
+### Step 3: Add to Environment
+```bash
+# Add to your .env file
+GOOGLE_CLIENT_ID=your_client_id_here
+GOOGLE_CLIENT_SECRET=your_client_secret_here
+```
+
+---
+
+## Setting Up Apple Authentication (Optional)
+
+For Apple Sign-In (requires Apple Developer Account - $99/year):
+
+### Step 1: Configure in Apple Developer Portal
+1. Go to [Apple Developer](https://developer.apple.com/)
+2. Navigate to **Certificates, Identifiers & Profiles**
+3. Create a new **App ID** with Sign In with Apple enabled
+4. Create a **Services ID** for web authentication
+5. Configure the web domain and return URLs
+
+### Step 2: Generate Keys
+1. Create a private key for Sign In with Apple
+2. Download the `.p8` key file
+3. Note your Key ID, Team ID, and Services ID
+
+### Step 3: Add to Environment
+```bash
+# Add to your .env file
+APPLE_CLIENT_ID=your_services_id
+APPLE_TEAM_ID=your_team_id
+APPLE_KEY_ID=your_key_id
+APPLE_PRIVATE_KEY=contents_of_p8_file
+```
+
+**Note:** Apple Sign-In requires HTTPS, so it won't work on localhost without additional setup.
+
+---
+
 ## Adding Google API Later (For Full Video Conversion)
 
 When you get Google Cloud billing working, you can add:

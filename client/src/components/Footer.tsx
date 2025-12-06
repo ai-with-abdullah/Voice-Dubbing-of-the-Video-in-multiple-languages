@@ -1,8 +1,7 @@
 import { Link } from "wouter";
-import { Mail, Github, Twitter, Linkedin } from "lucide-react";
+import { Github, Twitter, Linkedin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { isExpoMode } from "@/lib/config";
 
 const footerLinks = {
   product: [
@@ -83,9 +82,7 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Product</h4>
             <ul className="space-y-2">
-              {footerLinks.product
-                .filter((link) => isExpoMode() ? link.href !== "/pricing" : true)
-                .map((link) => (
+              {footerLinks.product.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
