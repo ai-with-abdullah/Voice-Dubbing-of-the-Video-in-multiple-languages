@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
+import { Logo } from "./Logo";
 import { isExpoMode } from "@/lib/config";
 
 const navItems = [
@@ -20,12 +21,7 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-lg">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2" data-testid="link-logo">
-            <img src="/favicon.png" alt="Dubbio" className="h-9 w-9 rounded-lg" />
-            <span className="hidden font-semibold text-foreground sm:inline-block">
-              Dubbio
-            </span>
-          </Link>
+          <Logo showText={true} />
 
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (

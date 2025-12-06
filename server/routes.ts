@@ -215,6 +215,38 @@ export async function registerRoutes(
     });
   }
 
+  // Password reset request (placeholder - would integrate with email service)
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email || typeof email !== "string") {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: "Invalid email format" });
+      }
+
+      // In production, this would:
+      // 1. Check if user exists
+      // 2. Generate a secure reset token
+      // 3. Store token with expiry in database
+      // 4. Send email with reset link
+      console.log(`Password reset requested for: ${email}`);
+
+      // Always return success to prevent email enumeration
+      res.json({ 
+        success: true, 
+        message: "If an account exists with this email, reset instructions have been sent" 
+      });
+    } catch (error) {
+      console.error("Error processing password reset:", error);
+      res.status(500).json({ error: "Failed to process password reset request" });
+    }
+  });
+
   app.get("/api/health", (req, res) => {
     res.json({
       status: "ok",
