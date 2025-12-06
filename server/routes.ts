@@ -1,7 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import path from "path";
+import express from "express";
 import { storage } from "./storage";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
+import { generateSpeechWithElevenLabs, checkApiKeyValid } from "./elevenlabs";
 import {
   insertVideoConversionSchema,
   insertVoiceDubbingSchema,
@@ -15,6 +18,9 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   const isExpoMode = process.env.EXPO_MODE === "true";
+
+  // Serve generated audio files
+  app.use("/audio", express.static(path.join(process.cwd(), "public", "audio")));
 
   app.get("/api/config", (req, res) => {
     res.json({
@@ -96,10 +102,25 @@ export async function registerRoutes(
 
       const dubbing = await storage.createVoiceDubbing(validation.data);
       
-      await storage.updateVoiceDubbing(dubbing.id, {
-        status: "completed",
-        outputAudioUrl: "/api/audio/sample.mp3",
-      });
+      // Generate actual speech using ElevenLabs
+      const result = await generateSpeechWithElevenLabs(
+        validation.data.inputText,
+        validation.data.targetLanguage
+      );
+
+      if (result.success && result.audioUrl) {
+        await storage.updateVoiceDubbing(dubbing.id, {
+          status: "completed",
+          outputAudioUrl: result.audioUrl,
+        });
+      } else {
+        await storage.updateVoiceDubbing(dubbing.id, {
+          status: "failed",
+        });
+        return res.status(500).json({ 
+          error: result.error || "Failed to generate voice" 
+        });
+      }
 
       const updated = await storage.getVoiceDubbing(dubbing.id);
       res.json(updated);
@@ -107,6 +128,17 @@ export async function registerRoutes(
       console.error("Error generating voice:", error);
       res.status(500).json({ error: "Failed to generate voice" });
     }
+  });
+
+  // Check if ElevenLabs API is configured
+  app.get("/api/voice/status", async (req, res) => {
+    const isValid = await checkApiKeyValid();
+    res.json({
+      elevenlabs: isValid,
+      message: isValid 
+        ? "ElevenLabs API is configured and ready" 
+        : "ElevenLabs API key not configured or invalid",
+    });
   });
 
   app.get("/api/voice/:id", async (req, res) => {
