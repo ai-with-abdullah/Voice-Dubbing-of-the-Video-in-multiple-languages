@@ -61,5 +61,6 @@ expertMode = true
 [userenv]
 
 [userenv.shared]
-VITE_EXPO_MODE = "true"
+VITE_EXPO_MODE = "false"
 VITE_BASE_URL = "https://ai-video-dubbing.replit.app"
+EXPO_MODE = "false"
