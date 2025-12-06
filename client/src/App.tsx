@@ -9,6 +9,8 @@ import Convert from "@/pages/convert";
 import Studio from "@/pages/studio";
 import Languages from "@/pages/languages";
 import Pricing from "@/pages/pricing";
+import Login from "@/pages/login";
+import Signup from "@/pages/signup";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -19,6 +21,8 @@ function Router() {
       <Route path="/studio" component={Studio} />
       <Route path="/languages" component={Languages} />
       <Route path="/pricing" component={Pricing} />
+      <Route path="/login" component={Login} />
+      <Route path="/signup" component={Signup} />
       <Route component={NotFound} />
     </Switch>
   );
