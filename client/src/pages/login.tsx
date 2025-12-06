@@ -124,6 +124,7 @@ export default function Login() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
+                      autoComplete="email"
                       data-testid="input-login-email"
                     />
                   </div>
@@ -149,6 +150,7 @@ export default function Login() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="pl-10"
+                      autoComplete="current-password"
                       data-testid="input-login-password"
                     />
                   </div>

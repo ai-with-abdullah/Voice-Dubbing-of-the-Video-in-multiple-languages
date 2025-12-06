@@ -161,6 +161,7 @@ export default function Signup() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       className="pl-10"
+                      autoComplete="name"
                       data-testid="input-signup-name"
                     />
                   </div>
@@ -177,6 +178,7 @@ export default function Signup() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
+                      autoComplete="email"
                       data-testid="input-signup-email"
                     />
                   </div>
@@ -193,6 +195,7 @@ export default function Signup() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="pl-10"
+                      autoComplete="new-password"
                       data-testid="input-signup-password"
                     />
                   </div>
