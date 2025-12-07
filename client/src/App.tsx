@@ -13,6 +13,12 @@ import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import ForgotPassword from "@/pages/forgot-password";
 import Checkout from "@/pages/checkout";
+import Docs from "@/pages/docs";
+import Blog from "@/pages/blog";
+import Support from "@/pages/support";
+import Privacy from "@/pages/privacy";
+import Terms from "@/pages/terms";
+import Cookies from "@/pages/cookies";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -27,6 +33,12 @@ function Router() {
       <Route path="/signup" component={Signup} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/checkout" component={Checkout} />
+      <Route path="/docs" component={Docs} />
+      <Route path="/blog" component={Blog} />
+      <Route path="/support" component={Support} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/terms" component={Terms} />
+      <Route path="/cookies" component={Cookies} />
       <Route component={NotFound} />
     </Switch>
   );
