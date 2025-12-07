@@ -1,16 +1,19 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { SEO } from "@/components/SEO";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Headphones,
   Mail,
@@ -67,31 +70,31 @@ const popularTopics = [
   },
 ];
 
+const contactFormSchema = z.object({
+  name: z.string().min(1, "Name is required").min(2, "Name must be at least 2 characters"),
+  email: z.string().min(1, "Email is required").email("Please enter a valid email address"),
+  subject: z.string().optional(),
+  category: z.string().optional(),
+  message: z.string().min(1, "Message is required").min(10, "Message must be at least 10 characters"),
+});
+
+type ContactFormData = z.infer<typeof contactFormSchema>;
+
 export default function Support() {
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    category: "",
-    message: "",
+  
+  const form = useForm<ContactFormData>({
+    resolver: zodResolver(contactFormSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      subject: "",
+      category: "",
+      message: "",
+    },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.name || !formData.email || !formData.message) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    
+  const onSubmit = async (data: ContactFormData) => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
     
     toast({
@@ -99,18 +102,16 @@ export default function Support() {
       description: "Thank you for contacting us. We'll get back to you within 24 hours.",
     });
     
-    setFormData({
-      name: "",
-      email: "",
-      subject: "",
-      category: "",
-      message: "",
-    });
-    setIsSubmitting(false);
+    form.reset();
   };
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEO 
+        title="Support Center - Get Help"
+        description="Get help with Dubbio's AI video dubbing platform. Browse documentation, contact our support team, or start a live chat for immediate assistance."
+        keywords="Dubbio support, customer service, help center, contact support, video dubbing help"
+      />
       <Header />
       <main className="flex-1">
         <section className="py-12 md:py-20 bg-gradient-to-b from-primary/5 to-background">
@@ -144,7 +145,7 @@ export default function Support() {
                 >
                   {option.href.startsWith("/") ? (
                     <Link href={option.href}>
-                      <Card className="h-full hover-elevate cursor-pointer text-center">
+                      <Card className="h-full hover-elevate cursor-pointer text-center" data-testid={`card-support-${option.title.toLowerCase().replace(" ", "-")}`}>
                         <CardHeader>
                           <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                             <option.icon className="w-6 h-6 text-primary" />
@@ -153,7 +154,7 @@ export default function Support() {
                           <CardDescription>{option.description}</CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <Button variant="outline" className="gap-2">
+                          <Button variant="outline" className="gap-2" data-testid={`button-support-${option.title.toLowerCase().replace(" ", "-")}`}>
                             {option.action}
                             <ArrowRight className="w-4 h-4" />
                           </Button>
@@ -162,7 +163,7 @@ export default function Support() {
                     </Link>
                   ) : (
                     <a href={option.href}>
-                      <Card className="h-full hover-elevate cursor-pointer text-center">
+                      <Card className="h-full hover-elevate cursor-pointer text-center" data-testid={`card-support-${option.title.toLowerCase().replace(" ", "-")}`}>
                         <CardHeader>
                           <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                             <option.icon className="w-6 h-6 text-primary" />
@@ -171,7 +172,7 @@ export default function Support() {
                           <CardDescription>{option.description}</CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <Button variant="outline" className="gap-2">
+                          <Button variant="outline" className="gap-2" data-testid={`button-support-${option.title.toLowerCase().replace(" ", "-")}`}>
                             {option.action}
                             <ArrowRight className="w-4 h-4" />
                           </Button>
@@ -203,7 +204,7 @@ export default function Support() {
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   viewport={{ once: true }}
                 >
-                  <Card className="h-full">
+                  <Card className="h-full" data-testid={`card-topic-${topic.title.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}>
                     <CardHeader>
                       <div className="flex items-center gap-3">
                         <topic.icon className="w-5 h-5 text-primary" />
@@ -241,95 +242,131 @@ export default function Support() {
 
               <Card>
                 <CardContent className="pt-6">
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Name *</Label>
-                        <Input
-                          id="name"
-                          placeholder="Your name"
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          data-testid="input-support-name"
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Name *</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="Your name" 
+                                  {...field} 
+                                  data-testid="input-contact-name"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email *</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="email" 
+                                  placeholder="your@email.com" 
+                                  {...field} 
+                                  data-testid="input-contact-email"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email *</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="your@email.com"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          data-testid="input-support-email"
-                        />
-                      </div>
-                    </div>
 
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="subject">Subject</Label>
-                        <Input
-                          id="subject"
-                          placeholder="Brief description"
-                          value={formData.subject}
-                          onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                          data-testid="input-support-subject"
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="subject"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Subject</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="Brief description" 
+                                  {...field} 
+                                  data-testid="input-contact-subject"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="category"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Category</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-contact-category">
+                                    <SelectValue placeholder="Select category" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="general">General Inquiry</SelectItem>
+                                  <SelectItem value="technical">Technical Support</SelectItem>
+                                  <SelectItem value="billing">Billing & Payments</SelectItem>
+                                  <SelectItem value="feature">Feature Request</SelectItem>
+                                  <SelectItem value="bug">Bug Report</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="category">Category</Label>
-                        <Select
-                          value={formData.category}
-                          onValueChange={(value) => setFormData({ ...formData, category: value })}
-                        >
-                          <SelectTrigger data-testid="select-support-category">
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="general">General Inquiry</SelectItem>
-                            <SelectItem value="technical">Technical Support</SelectItem>
-                            <SelectItem value="billing">Billing & Payments</SelectItem>
-                            <SelectItem value="feature">Feature Request</SelectItem>
-                            <SelectItem value="bug">Bug Report</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="message">Message *</Label>
-                      <Textarea
-                        id="message"
-                        placeholder="Describe your issue or question in detail..."
-                        rows={5}
-                        value={formData.message}
-                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                        data-testid="textarea-support-message"
+                      <FormField
+                        control={form.control}
+                        name="message"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Message *</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Describe your issue or question in detail..."
+                                rows={5}
+                                {...field}
+                                data-testid="textarea-contact-message"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                    </div>
 
-                    <Button
-                      type="submit"
-                      className="w-full gap-2"
-                      disabled={isSubmitting}
-                      data-testid="button-support-submit"
-                    >
-                      {isSubmitting ? (
-                        <>Processing...</>
-                      ) : (
-                        <>
-                          <Send className="w-4 h-4" />
-                          Send Message
-                        </>
-                      )}
-                    </Button>
-                  </form>
+                      <Button
+                        type="submit"
+                        className="w-full gap-2"
+                        disabled={form.formState.isSubmitting}
+                        data-testid="button-contact-submit"
+                      >
+                        {form.formState.isSubmitting ? (
+                          <>Processing...</>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4" />
+                            Send Message
+                          </>
+                        )}
+                      </Button>
+                    </form>
+                  </Form>
                 </CardContent>
               </Card>
 
               <div className="mt-8 text-center">
-                <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
+                <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground flex-wrap">
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4" />
                     <span>Response within 24 hours</span>

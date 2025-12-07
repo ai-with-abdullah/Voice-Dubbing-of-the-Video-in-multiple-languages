@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { SEO } from "@/components/SEO";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
@@ -145,6 +146,11 @@ We will respond to your inquiry within 30 days.`,
 export default function Privacy() {
   return (
     <div className="min-h-screen flex flex-col">
+      <SEO 
+        title="Privacy Policy"
+        description="Learn how Dubbio collects, uses, and protects your personal information. Our commitment to your privacy and data security."
+        keywords="Dubbio privacy policy, data protection, personal information, GDPR compliance"
+      />
       <Header />
       <main className="flex-1">
         <section className="py-12 md:py-20 bg-gradient-to-b from-primary/5 to-background">

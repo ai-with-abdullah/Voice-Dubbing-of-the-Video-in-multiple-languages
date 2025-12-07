@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { SEO } from "@/components/SEO";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -94,6 +95,11 @@ export default function Blog() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEO 
+        title="Blog - AI Voice Technology Insights & Updates"
+        description="Stay updated with the latest in AI voice technology, video dubbing tutorials, product updates, and success stories from the Dubbio community."
+        keywords="AI voice blog, video dubbing news, translation technology, voice cloning updates"
+      />
       <Header />
       <main className="flex-1">
         <section className="py-12 md:py-20 bg-gradient-to-b from-primary/5 to-background">
@@ -143,7 +149,7 @@ export default function Blog() {
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   viewport={{ once: true }}
                 >
-                  <Card className="h-full hover-elevate cursor-pointer">
+                  <Card className="h-full hover-elevate cursor-pointer" data-testid={`card-blog-featured-${post.id}`}>
                     <CardHeader>
                       <div className="flex items-center gap-2 mb-3">
                         <Badge variant="secondary" className="gap-1">
@@ -161,7 +167,7 @@ export default function Blog() {
                       <p className="text-muted-foreground mb-4">{post.excerpt}</p>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">{post.date}</span>
-                        <Button variant="ghost" size="sm" className="gap-1">
+                        <Button variant="ghost" size="sm" className="gap-1" data-testid={`button-read-more-${post.id}`}>
                           Read More
                           <ArrowRight className="w-3 h-3" />
                         </Button>
@@ -182,7 +188,7 @@ export default function Blog() {
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   viewport={{ once: true }}
                 >
-                  <Card className="h-full hover-elevate cursor-pointer">
+                  <Card className="h-full hover-elevate cursor-pointer" data-testid={`card-blog-${post.id}`}>
                     <CardHeader>
                       <div className="flex items-center gap-2 mb-2">
                         <Badge variant="outline" className="text-xs">
@@ -207,7 +213,7 @@ export default function Blog() {
             </div>
 
             <div className="text-center mt-12">
-              <Button variant="outline" size="lg" className="gap-2">
+              <Button variant="outline" size="lg" className="gap-2" data-testid="button-load-more">
                 Load More Articles
                 <ArrowRight className="w-4 h-4" />
               </Button>

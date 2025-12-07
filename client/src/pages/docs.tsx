@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { SEO } from "@/components/SEO";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -100,6 +101,11 @@ const faqs = [
 export default function Docs() {
   return (
     <div className="min-h-screen flex flex-col">
+      <SEO 
+        title="Documentation - How to Use Dubbio"
+        description="Learn how to use Dubbio's AI-powered video dubbing platform. Step-by-step guides, tutorials, and FAQs for converting videos to 200+ languages."
+        keywords="Dubbio documentation, video dubbing guide, AI translation tutorial, voice cloning help"
+      />
       <Header />
       <main className="flex-1">
         <section className="py-12 md:py-20 bg-gradient-to-b from-primary/5 to-background">
@@ -170,7 +176,7 @@ export default function Docs() {
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   viewport={{ once: true }}
                 >
-                  <Card className="h-full">
+                  <Card className="h-full" data-testid={`card-step-${step.step}`}>
                     <CardHeader>
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
@@ -217,7 +223,7 @@ export default function Docs() {
                   viewport={{ once: true }}
                 >
                   <Link href={feature.href}>
-                    <Card className="h-full hover-elevate cursor-pointer">
+                    <Card className="h-full hover-elevate cursor-pointer" data-testid={`card-feature-${feature.title.toLowerCase().replace(/\s+/g, "-")}`}>
                       <CardHeader>
                         <feature.icon className="w-8 h-8 text-primary mb-2" />
                         <CardTitle className="text-lg">{feature.title}</CardTitle>
@@ -263,7 +269,7 @@ export default function Docs() {
                   transition={{ duration: 0.5, delay: index * 0.05 }}
                   viewport={{ once: true }}
                 >
-                  <Card>
+                  <Card data-testid={`card-faq-${index}`}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base font-semibold">{faq.question}</CardTitle>
                     </CardHeader>

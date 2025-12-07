@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { SEO } from "@/components/SEO";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
@@ -123,6 +124,11 @@ You may also visit our Privacy Policy for more information about how we handle y
 export default function Cookies() {
   return (
     <div className="min-h-screen flex flex-col">
+      <SEO 
+        title="Cookie Policy"
+        description="Learn about how Dubbio uses cookies and similar technologies to provide, protect, and improve our AI video dubbing services."
+        keywords="Dubbio cookie policy, website cookies, tracking technologies, cookie preferences"
+      />
       <Header />
       <main className="flex-1">
         <section className="py-12 md:py-20 bg-gradient-to-b from-primary/5 to-background">

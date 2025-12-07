@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { SEO } from "@/components/SEO";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
@@ -174,6 +175,11 @@ We will respond to inquiries within 30 business days.`,
 export default function Terms() {
   return (
     <div className="min-h-screen flex flex-col">
+      <SEO 
+        title="Terms of Service"
+        description="Read the terms and conditions for using Dubbio's AI video dubbing services. Understand your rights and responsibilities as a user."
+        keywords="Dubbio terms of service, user agreement, service terms, legal terms"
+      />
       <Header />
       <main className="flex-1">
         <section className="py-12 md:py-20 bg-gradient-to-b from-primary/5 to-background">
