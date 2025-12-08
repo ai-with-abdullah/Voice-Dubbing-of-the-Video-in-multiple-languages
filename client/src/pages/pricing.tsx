@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, Link } from "wouter";
+import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Check, Sparkles, Zap, Shield, Users, Star } from "lucide-react";
 import { Header } from "@/components/Header";
@@ -33,11 +33,12 @@ export default function Pricing() {
     );
   }
 
-  const getPlanUrl = (planId: string) => {
+  const handleSelectPlan = (planId: string) => {
     if (planId === "free") {
-      return "/convert";
+      setLocation("/convert");
+    } else {
+      setLocation(`/checkout?plan=${planId}&billing=${isAnnual ? "annual" : "monthly"}`);
     }
-    return `/checkout?plan=${planId}&billing=${isAnnual ? "annual" : "monthly"}`;
   };
 
   const getPrice = (plan: typeof pricingPlans[number]) => {
@@ -166,12 +167,10 @@ export default function Pricing() {
                         className="w-full"
                         size="lg"
                         variant={isPopular ? "default" : plan.id === "business" ? "outline" : "secondary"}
-                        asChild
+                        onClick={() => handleSelectPlan(plan.id)}
                         data-testid={`button-select-${plan.id}`}
                       >
-                        <a href={getPlanUrl(plan.id)}>
-                          {plan.id === "free" ? "Start Free Trial" : `Get ${plan.name}`}
-                        </a>
+                        {plan.id === "free" ? "Start Free Trial" : `Get ${plan.name}`}
                       </Button>
                     </CardFooter>
                   </Card>
