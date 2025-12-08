@@ -55,10 +55,12 @@ export function HeroSection() {
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="gap-2 w-full sm:w-auto" data-testid="button-watch-demo">
-                <Play className="w-4 h-4" />
-                Watch Demo
-              </Button>
+              <Link href="/demo">
+                <Button size="lg" variant="outline" className="gap-2 w-full sm:w-auto" data-testid="button-watch-demo">
+                  <Play className="w-4 h-4" />
+                  Watch Demo
+                </Button>
+              </Link>
             </div>
 
             <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
