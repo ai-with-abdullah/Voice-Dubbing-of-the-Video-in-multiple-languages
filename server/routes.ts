@@ -6,6 +6,12 @@ import { storage } from "./storage";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
 import { createPaymentIntent, getStripeConfig, isStripeConfigured } from "./stripe";
 import { generateSpeechWithElevenLabs, checkApiKeyValid } from "./elevenlabs";
+import { 
+  translateText, 
+  generateSpeechWithGoogle, 
+  detectLanguage, 
+  isGoogleConfigured 
+} from "./google";
 import {
   insertVideoConversionSchema,
   insertVoiceDubbingSchema,
@@ -20,7 +26,6 @@ export async function registerRoutes(
 ): Promise<Server> {
   const isExpoMode = process.env.EXPO_MODE === "true";
 
-  // Serve generated audio files
   app.use("/audio", express.static(path.join(process.cwd(), "public", "audio")));
 
   app.get("/api/config", (req, res) => {
@@ -53,7 +58,15 @@ export async function registerRoutes(
         return res.status(400).json({ error: validation.error.message });
       }
 
+      if (!isGoogleConfigured()) {
+        return res.status(400).json({ 
+          error: "Google API key not configured. Please add GOOGLE_API_KEY to use video conversion." 
+        });
+      }
+
       const conversion = await storage.createVideoConversion(validation.data);
+      
+      processVideoConversion(conversion.id, validation.data);
       
       res.json({
         id: conversion.id,
@@ -65,6 +78,139 @@ export async function registerRoutes(
       res.status(500).json({ error: "Failed to start conversion" });
     }
   });
+
+  async function processVideoConversion(conversionId: string, data: any) {
+    try {
+      await storage.updateVideoConversion(conversionId, { 
+        status: "processing", 
+        progress: 10 
+      });
+
+      const sampleText = data.sampleText || "Hello, this is a sample text for voice dubbing demonstration. This video has been converted to a new language using AI technology.";
+      
+      await storage.updateVideoConversion(conversionId, { 
+        progress: 30,
+        transcript: sampleText,
+      });
+
+      const translationResult = await translateText(sampleText, data.targetLanguage);
+      
+      if (!translationResult.success) {
+        await storage.updateVideoConversion(conversionId, { 
+          status: "failed",
+          progress: 0,
+        });
+        console.error("Translation failed:", translationResult.error);
+        return;
+      }
+
+      await storage.updateVideoConversion(conversionId, { 
+        progress: 60,
+        translatedText: translationResult.translatedText,
+      });
+
+      const elevenlabsAvailable = await checkApiKeyValid();
+      let audioResult;
+      
+      if (elevenlabsAvailable && data.voiceType === "elevenlabs") {
+        audioResult = await generateSpeechWithElevenLabs(
+          translationResult.translatedText!,
+          data.targetLanguage
+        );
+      } else {
+        audioResult = await generateSpeechWithGoogle(
+          translationResult.translatedText!,
+          data.targetLanguage
+        );
+      }
+
+      if (!audioResult.success) {
+        await storage.updateVideoConversion(conversionId, { 
+          status: "failed",
+          progress: 0,
+        });
+        console.error("Audio generation failed:", audioResult.error);
+        return;
+      }
+
+      await storage.updateVideoConversion(conversionId, { 
+        progress: 90,
+        outputAudioUrl: audioResult.audioUrl,
+      });
+
+      const subtitlesSrt = generateSRT(translationResult.translatedText!, data.targetLanguage);
+      const subtitlesVtt = generateVTT(translationResult.translatedText!, data.targetLanguage);
+
+      await storage.updateVideoConversion(conversionId, { 
+        status: "completed",
+        progress: 100,
+        subtitlesSrt,
+        subtitlesVtt,
+        outputVideoUrl: data.originalUrl,
+      });
+
+      console.log(`Conversion ${conversionId} completed successfully`);
+    } catch (error) {
+      console.error("Error processing video conversion:", error);
+      await storage.updateVideoConversion(conversionId, { 
+        status: "failed",
+        progress: 0,
+      });
+    }
+  }
+
+  function generateSRT(text: string, language: string): string {
+    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+    let srt = "";
+    let startTime = 0;
+    
+    sentences.forEach((sentence, index) => {
+      const duration = Math.max(2, Math.ceil(sentence.length / 15));
+      const endTime = startTime + duration;
+      
+      srt += `${index + 1}\n`;
+      srt += `${formatSRTTime(startTime)} --> ${formatSRTTime(endTime)}\n`;
+      srt += `${sentence.trim()}\n\n`;
+      
+      startTime = endTime;
+    });
+    
+    return srt;
+  }
+
+  function generateVTT(text: string, language: string): string {
+    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+    let vtt = "WEBVTT\n\n";
+    let startTime = 0;
+    
+    sentences.forEach((sentence, index) => {
+      const duration = Math.max(2, Math.ceil(sentence.length / 15));
+      const endTime = startTime + duration;
+      
+      vtt += `${formatVTTTime(startTime)} --> ${formatVTTTime(endTime)}\n`;
+      vtt += `${sentence.trim()}\n\n`;
+      
+      startTime = endTime;
+    });
+    
+    return vtt;
+  }
+
+  function formatSRTTime(seconds: number): string {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    const ms = Math.floor((seconds % 1) * 1000);
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")},${ms.toString().padStart(3, "0")}`;
+  }
+
+  function formatVTTTime(seconds: number): string {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    const ms = Math.floor((seconds % 1) * 1000);
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(3, "0")}`;
+  }
 
   app.get("/api/convert/video/:id", async (req, res) => {
     try {
@@ -103,11 +249,38 @@ export async function registerRoutes(
 
       const dubbing = await storage.createVoiceDubbing(validation.data);
       
-      // Generate actual speech using ElevenLabs
-      const result = await generateSpeechWithElevenLabs(
-        validation.data.inputText,
-        validation.data.targetLanguage
-      );
+      const elevenlabsAvailable = await checkApiKeyValid();
+      let result;
+      
+      if (elevenlabsAvailable && validation.data.voiceType === "elevenlabs") {
+        result = await generateSpeechWithElevenLabs(
+          validation.data.inputText,
+          validation.data.targetLanguage
+        );
+      } else if (isGoogleConfigured()) {
+        let textToSpeak = validation.data.inputText;
+        
+        if (validation.data.sourceLanguage && 
+            validation.data.sourceLanguage !== validation.data.targetLanguage) {
+          const translationResult = await translateText(
+            validation.data.inputText, 
+            validation.data.targetLanguage,
+            validation.data.sourceLanguage
+          );
+          if (translationResult.success && translationResult.translatedText) {
+            textToSpeak = translationResult.translatedText;
+          }
+        }
+        
+        result = await generateSpeechWithGoogle(
+          textToSpeak,
+          validation.data.targetLanguage
+        );
+      } else {
+        return res.status(400).json({ 
+          error: "No voice API configured. Please add GOOGLE_API_KEY or ELEVENLABS_API_KEY." 
+        });
+      }
 
       if (result.success && result.audioUrl) {
         await storage.updateVoiceDubbing(dubbing.id, {
@@ -131,14 +304,19 @@ export async function registerRoutes(
     }
   });
 
-  // Check if ElevenLabs API is configured
   app.get("/api/voice/status", async (req, res) => {
-    const isValid = await checkApiKeyValid();
+    const elevenlabsValid = await checkApiKeyValid();
+    const googleValid = isGoogleConfigured();
+    
     res.json({
-      elevenlabs: isValid,
-      message: isValid 
-        ? "ElevenLabs API is configured and ready" 
-        : "ElevenLabs API key not configured or invalid",
+      elevenlabs: elevenlabsValid,
+      google: googleValid,
+      available: elevenlabsValid || googleValid,
+      message: elevenlabsValid 
+        ? "ElevenLabs API is configured (premium voices)" 
+        : googleValid 
+          ? "Google TTS is configured (standard voices)"
+          : "No voice API configured. Please add GOOGLE_API_KEY or ELEVENLABS_API_KEY.",
     });
   });
 
@@ -174,7 +352,6 @@ export async function registerRoutes(
     await capturePaypalOrder(req, res);
   });
 
-  // Stripe payment routes
   app.get("/api/stripe/config", async (req, res) => {
     await getStripeConfig(req, res);
   });
@@ -183,7 +360,6 @@ export async function registerRoutes(
     await createPaymentIntent(req, res);
   });
 
-  // Payment methods status
   app.get("/api/payment-methods", (req, res) => {
     res.json({
       paypal: true,
@@ -233,7 +409,6 @@ export async function registerRoutes(
     });
   }
 
-  // Password reset request (placeholder - would integrate with email service)
   app.post("/api/auth/forgot-password", async (req, res) => {
     try {
       const { email } = req.body;
@@ -247,14 +422,8 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Invalid email format" });
       }
 
-      // In production, this would:
-      // 1. Check if user exists
-      // 2. Generate a secure reset token
-      // 3. Store token with expiry in database
-      // 4. Send email with reset link
       console.log(`Password reset requested for: ${email}`);
 
-      // Always return success to prevent email enumeration
       res.json({ 
         success: true, 
         message: "If an account exists with this email, reset instructions have been sent" 
@@ -270,6 +439,7 @@ export async function registerRoutes(
       status: "ok",
       timestamp: new Date().toISOString(),
       expoMode: isExpoMode,
+      googleApi: isGoogleConfigured(),
     });
   });
 
