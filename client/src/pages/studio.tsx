@@ -3,8 +3,42 @@ import { Footer } from "@/components/Footer";
 import { VoiceDubbingStudio } from "@/components/VoiceDubbingStudio";
 import { Badge } from "@/components/ui/badge";
 import { Mic2 } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Studio() {
+  const { toast } = useToast();
+
+  const handleGenerate = async (text: string, targetLanguage: string, voiceType: string): Promise<string> => {
+    try {
+      const response = await apiRequest("POST", "/api/voice/generate", {
+        inputText: text,
+        targetLanguage: targetLanguage,
+        voiceType: voiceType,
+      });
+
+      const data = await response.json();
+
+      if (data.outputAudioUrl) {
+        toast({
+          title: "Voice Generated",
+          description: "Your audio has been successfully generated in the selected language.",
+        });
+        return data.outputAudioUrl;
+      } else {
+        throw new Error("No audio URL returned from the server");
+      }
+    } catch (error) {
+      console.error("Error generating voice:", error);
+      toast({
+        title: "Generation Failed",
+        description: error instanceof Error ? error.message : "Failed to generate voice. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -24,7 +58,7 @@ export default function Studio() {
             </p>
           </div>
 
-          <VoiceDubbingStudio />
+          <VoiceDubbingStudio onGenerate={handleGenerate} />
         </div>
       </main>
       <Footer />
