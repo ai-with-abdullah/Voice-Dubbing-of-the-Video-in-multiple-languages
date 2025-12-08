@@ -20,6 +20,16 @@ import {
   pricingPlans,
 } from "@shared/schema";
 
+interface VideoInfo {
+  title: string;
+  thumbnail: string;
+  embedUrl: string;
+  originalUrl: string;
+  platform: string;
+  detectedLanguage: string | null;
+  duration?: number;
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -50,6 +60,240 @@ export async function registerRoutes(
       res.status(500).json({ error: "Failed to get stats" });
     }
   });
+
+  app.post("/api/video/info", async (req, res) => {
+    try {
+      const { url } = req.body;
+      
+      if (!url || typeof url !== "string") {
+        return res.status(400).json({ error: "Video URL is required" });
+      }
+
+      const videoInfo = await fetchVideoInfo(url);
+      
+      if (!videoInfo) {
+        return res.status(400).json({ error: "Could not fetch video information. Please check the URL." });
+      }
+
+      res.json(videoInfo);
+    } catch (error) {
+      console.error("Error fetching video info:", error);
+      res.status(500).json({ error: "Failed to fetch video information" });
+    }
+  });
+
+  async function fetchVideoInfo(url: string): Promise<VideoInfo | null> {
+    const platform = detectPlatform(url);
+    
+    if (!platform) {
+      return null;
+    }
+
+    try {
+      switch (platform) {
+        case "youtube":
+          return await fetchYouTubeInfo(url);
+        case "vimeo":
+          return await fetchVimeoInfo(url);
+        case "tiktok":
+          return await fetchTikTokInfo(url);
+        case "instagram":
+          return await fetchInstagramInfo(url);
+        case "facebook":
+          return await fetchFacebookInfo(url);
+        case "twitter":
+          return await fetchTwitterInfo(url);
+        default:
+          return await fetchGenericInfo(url, platform);
+      }
+    } catch (error) {
+      console.error(`Error fetching ${platform} video info:`, error);
+      return null;
+    }
+  }
+
+  function detectPlatform(url: string): string | null {
+    const urlLower = url.toLowerCase();
+    
+    if (urlLower.includes("youtube.com") || urlLower.includes("youtu.be")) {
+      return "youtube";
+    } else if (urlLower.includes("vimeo.com")) {
+      return "vimeo";
+    } else if (urlLower.includes("tiktok.com")) {
+      return "tiktok";
+    } else if (urlLower.includes("instagram.com")) {
+      return "instagram";
+    } else if (urlLower.includes("facebook.com") || urlLower.includes("fb.watch")) {
+      return "facebook";
+    } else if (urlLower.includes("twitter.com") || urlLower.includes("x.com")) {
+      return "twitter";
+    } else if (urlLower.includes("dailymotion.com")) {
+      return "dailymotion";
+    } else if (urlLower.includes("twitch.tv")) {
+      return "twitch";
+    }
+    
+    return null;
+  }
+
+  function extractYouTubeVideoId(url: string): string | null {
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([^&\n?#]+)/,
+      /youtube\.com\/shorts\/([^&\n?#]+)/
+    ];
+    
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    return null;
+  }
+
+  async function fetchYouTubeInfo(url: string): Promise<VideoInfo | null> {
+    const videoId = extractYouTubeVideoId(url);
+    if (!videoId) {
+      return null;
+    }
+
+    try {
+      const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+      const response = await fetch(oembedUrl);
+      
+      if (!response.ok) {
+        throw new Error(`YouTube oEmbed failed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      let detectedLanguage: string | null = null;
+      if (isGoogleConfigured() && data.title) {
+        const langResult = await detectLanguage(data.title);
+        if (langResult.success && langResult.language) {
+          detectedLanguage = langResult.language;
+        }
+      }
+      
+      return {
+        title: data.title || "YouTube Video",
+        thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+        embedUrl: `https://www.youtube.com/embed/${videoId}`,
+        originalUrl: url,
+        platform: "youtube",
+        detectedLanguage,
+      };
+    } catch (error) {
+      console.error("YouTube oEmbed error:", error);
+      return {
+        title: "YouTube Video",
+        thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+        embedUrl: `https://www.youtube.com/embed/${videoId}`,
+        originalUrl: url,
+        platform: "youtube",
+        detectedLanguage: null,
+      };
+    }
+  }
+
+  async function fetchVimeoInfo(url: string): Promise<VideoInfo | null> {
+    try {
+      const oembedUrl = `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`;
+      const response = await fetch(oembedUrl);
+      
+      if (!response.ok) {
+        return null;
+      }
+      
+      const data = await response.json();
+      
+      let detectedLanguage: string | null = null;
+      if (isGoogleConfigured() && data.title) {
+        const langResult = await detectLanguage(data.title);
+        if (langResult.success && langResult.language) {
+          detectedLanguage = langResult.language;
+        }
+      }
+      
+      return {
+        title: data.title || "Vimeo Video",
+        thumbnail: data.thumbnail_url || "",
+        embedUrl: `https://player.vimeo.com/video/${data.video_id}`,
+        originalUrl: url,
+        platform: "vimeo",
+        detectedLanguage,
+        duration: data.duration,
+      };
+    } catch (error) {
+      console.error("Vimeo oEmbed error:", error);
+      return null;
+    }
+  }
+
+  async function fetchTikTokInfo(url: string): Promise<VideoInfo | null> {
+    try {
+      const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
+      const response = await fetch(oembedUrl);
+      
+      if (!response.ok) {
+        return await fetchGenericInfo(url, "tiktok");
+      }
+      
+      const data = await response.json();
+      
+      let detectedLanguage: string | null = null;
+      if (isGoogleConfigured() && data.title) {
+        const langResult = await detectLanguage(data.title);
+        if (langResult.success && langResult.language) {
+          detectedLanguage = langResult.language;
+        }
+      }
+      
+      return {
+        title: data.title || "TikTok Video",
+        thumbnail: data.thumbnail_url || "",
+        embedUrl: url,
+        originalUrl: url,
+        platform: "tiktok",
+        detectedLanguage,
+      };
+    } catch (error) {
+      console.error("TikTok oEmbed error:", error);
+      return await fetchGenericInfo(url, "tiktok");
+    }
+  }
+
+  async function fetchInstagramInfo(url: string): Promise<VideoInfo | null> {
+    return await fetchGenericInfo(url, "instagram");
+  }
+
+  async function fetchFacebookInfo(url: string): Promise<VideoInfo | null> {
+    return await fetchGenericInfo(url, "facebook");
+  }
+
+  async function fetchTwitterInfo(url: string): Promise<VideoInfo | null> {
+    return await fetchGenericInfo(url, "twitter");
+  }
+
+  async function fetchGenericInfo(url: string, platform: string): Promise<VideoInfo> {
+    const platformNames: Record<string, string> = {
+      tiktok: "TikTok",
+      instagram: "Instagram",
+      facebook: "Facebook",
+      twitter: "Twitter/X",
+      dailymotion: "Dailymotion",
+      twitch: "Twitch",
+    };
+
+    return {
+      title: `${platformNames[platform] || platform} Video`,
+      thumbnail: "",
+      embedUrl: url,
+      originalUrl: url,
+      platform,
+      detectedLanguage: null,
+    };
+  }
 
   app.post("/api/convert/video", async (req, res) => {
     try {

@@ -373,19 +373,292 @@ APPLE_PRIVATE_KEY=contents_of_p8_file
 
 ---
 
-## Adding Google API Later (For Full Video Conversion)
+## Setting Up Google Cloud API (For Full Video Conversion)
 
-When you get Google Cloud billing working, you can add:
+Google Cloud API enables the complete video conversion pipeline including language detection, translation, and Text-to-Speech.
 
+### What Google API Enables
+
+| Feature | Description |
+|---------|-------------|
+| Language Detection | Automatically detect source language from video title |
+| Translation | Translate text to 200+ languages |
+| Text-to-Speech | Generate natural-sounding dubbed audio |
+| Full Video Pipeline | Complete video-to-dubbed-video workflow |
+
+### Step 1: Create Google Cloud Project
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Click "Select a project" at the top, then "New Project"
+3. Name your project (e.g., "Dubbio Video Dubbing")
+4. Click "Create"
+
+### Step 2: Enable Required APIs
+
+In the Google Cloud Console, enable these APIs:
+
+1. **Cloud Translation API**
+   - Go to **APIs & Services > Library**
+   - Search for "Cloud Translation API"
+   - Click "Enable"
+
+2. **Cloud Text-to-Speech API**
+   - Search for "Cloud Text-to-Speech API"
+   - Click "Enable"
+
+### Step 3: Create API Key
+
+1. Go to **APIs & Services > Credentials**
+2. Click "Create Credentials" > "API Key"
+3. Copy the generated key
+4. (Recommended) Click "Edit API Key" to restrict it:
+   - Under "API restrictions", select "Restrict key"
+   - Select "Cloud Translation API" and "Cloud Text-to-Speech API"
+   - Click "Save"
+
+### Step 4: Enable Billing
+
+**Note:** Google Cloud requires billing to be enabled, but they offer a generous free tier:
+- Translation: 500,000 characters/month free
+- Text-to-Speech: 1 million characters/month free
+
+1. Go to **Billing** in Google Cloud Console
+2. Link a billing account or create one
+3. Select your project
+
+### Step 5: Add to Environment Variables
+
+For local development, add to your `.env` file:
 ```bash
-# Add to your .env file
-GOOGLE_API_KEY=your_google_api_key_here
+# Google Cloud API Key
+GOOGLE_API_KEY=AIza...your_google_api_key_here
 ```
 
-This will enable full video-to-video conversion with:
-- Speech-to-Text (extract audio from video)
-- Translation (translate to any language)
-- Text-to-Speech (generate dubbed audio)
+For Replit, add `GOOGLE_API_KEY` in the Secrets tab.
+
+### Step 6: Test Video Conversion
+
+1. Start the application: `npm run dev`
+2. Go to the Convert page
+3. Paste a YouTube or other video URL
+4. The app will:
+   - Fetch video title and thumbnail
+   - Detect the video's language automatically
+   - Allow you to select a target language
+   - Generate dubbed audio using Google TTS
+
+### Troubleshooting Google API
+
+| Issue | Solution |
+|-------|----------|
+| "Google API key not configured" | Check GOOGLE_API_KEY is set in .env |
+| "Cloud Translation API has not been enabled" | Enable the API in Google Cloud Console |
+| "Billing is required" | Enable billing in Google Cloud Console |
+| "API key not authorized" | Check API key restrictions allow the required APIs |
+| "Quota exceeded" | Check your usage in Google Cloud Console |
+
+### Google API Free Tier Limits
+
+| Service | Free Tier | Paid Rate |
+|---------|-----------|-----------|
+| Translation | 500K chars/month | $20 per million chars |
+| Text-to-Speech (Standard) | 1M chars/month | $4 per million chars |
+| Text-to-Speech (WaveNet) | 1M chars/month | $16 per million chars |
+
+The free tier is sufficient for development and light demo use.
+
+---
+
+## Video Conversion API Endpoints
+
+The application provides these API endpoints for video conversion:
+
+### Fetch Video Information
+
+```
+POST /api/video/info
+```
+
+**Request Body:**
+```json
+{
+  "url": "https://www.youtube.com/watch?v=VIDEO_ID"
+}
+```
+
+**Response:**
+```json
+{
+  "title": "Video Title",
+  "thumbnail": "https://img.youtube.com/vi/VIDEO_ID/maxresdefault.jpg",
+  "embedUrl": "https://www.youtube.com/embed/VIDEO_ID",
+  "originalUrl": "https://www.youtube.com/watch?v=VIDEO_ID",
+  "platform": "youtube",
+  "detectedLanguage": "en"
+}
+```
+
+**Supported Platforms:**
+- YouTube (youtube.com, youtu.be)
+- Vimeo (vimeo.com)
+- TikTok (tiktok.com)
+- Instagram (instagram.com)
+- Facebook (facebook.com, fb.watch)
+- Twitter/X (twitter.com, x.com)
+- Dailymotion (dailymotion.com)
+- Twitch (twitch.tv)
+
+### Start Video Conversion
+
+```
+POST /api/convert/video
+```
+
+**Request Body:**
+```json
+{
+  "originalUrl": "https://www.youtube.com/watch?v=VIDEO_ID",
+  "targetLanguage": "es",
+  "sourceLanguage": "en",
+  "voiceType": "google",
+  "platform": "youtube"
+}
+```
+
+**Response:**
+```json
+{
+  "id": "conversion_id",
+  "status": "processing",
+  "message": "Conversion started"
+}
+```
+
+### Get Conversion Status
+
+```
+GET /api/convert/video/:id
+```
+
+**Response:**
+```json
+{
+  "id": "conversion_id",
+  "status": "completed",
+  "progress": 100,
+  "outputAudioUrl": "/audio/converted_audio.mp3",
+  "translatedText": "Translated text...",
+  "subtitlesSrt": "1\n00:00:00,000 --> 00:00:02,000\nSubtitle line...",
+  "subtitlesVtt": "WEBVTT\n\n00:00:00.000 --> 00:00:02.000\nSubtitle line..."
+}
+```
+
+**Status Values:**
+- `pending` - Conversion queued
+- `processing` - Conversion in progress
+- `completed` - Conversion finished
+- `failed` - Conversion failed
+
+### Check Voice API Status
+
+```
+GET /api/voice/status
+```
+
+**Response:**
+```json
+{
+  "elevenlabs": true,
+  "google": true,
+  "available": true,
+  "message": "ElevenLabs API is configured (premium voices)"
+}
+```
+
+---
+
+## Voice Generation Flow
+
+### How Video Dubbing Works
+
+1. **URL Submission**: User pastes a video URL (YouTube, TikTok, etc.)
+2. **Info Fetch**: App calls `/api/video/info` to get title, thumbnail, and detect language
+3. **Language Selection**: User selects target language for dubbing
+4. **Conversion Start**: App calls `/api/convert/video` to begin processing
+5. **Translation**: Backend translates sample text to target language
+6. **Audio Generation**: Google TTS or ElevenLabs generates dubbed audio
+7. **Result Display**: User sees original video with dubbed audio player
+
+### Important Limitation
+
+Due to platform Terms of Service restrictions, the app cannot directly extract audio from videos hosted on YouTube, TikTok, etc. The current implementation:
+
+- Fetches video metadata (title, thumbnail)
+- Uses sample text for translation and TTS demonstration
+- Shows original video embed alongside generated audio
+
+For full video audio extraction, you would need to:
+- Use videos you own the rights to
+- Upload video files directly
+- Use server-side video processing libraries
+
+---
+
+## Complete Environment Variables Reference
+
+```bash
+# ============================================
+# VOICE GENERATION APIs (Choose one or both)
+# ============================================
+
+# ElevenLabs - Premium voice cloning (FREE tier available)
+# Get from: https://elevenlabs.io/
+ELEVENLABS_API_KEY=sk_xxxxxxxxxxxxxxxxxxxxxxxx
+
+# Google Cloud - Translation + Standard TTS
+# Get from: https://console.cloud.google.com/
+GOOGLE_API_KEY=AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# ============================================
+# APP CONFIGURATION
+# ============================================
+
+# Expo Mode - Hide pricing/login for demos
+VITE_EXPO_MODE=true
+EXPO_MODE=true
+
+# Session encryption key
+SESSION_SECRET=your-secret-key-here
+
+# Base URL for shareable links
+VITE_BASE_URL=http://localhost:5000
+
+# ============================================
+# PAYMENT PROVIDERS (Optional)
+# ============================================
+
+# Stripe - Credit card payments
+STRIPE_SECRET_KEY=sk_test_xxxxx
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxxxx
+
+# PayPal
+PAYPAL_CLIENT_ID=xxxxx
+PAYPAL_CLIENT_SECRET=xxxxx
+
+# ============================================
+# OAUTH PROVIDERS (Optional)
+# ============================================
+
+# Google Sign-In
+GOOGLE_CLIENT_ID=xxxxx
+GOOGLE_CLIENT_SECRET=xxxxx
+
+# Apple Sign-In
+APPLE_CLIENT_ID=xxxxx
+APPLE_TEAM_ID=xxxxx
+APPLE_KEY_ID=xxxxx
+APPLE_PRIVATE_KEY=xxxxx
+```
 
 ---
 
