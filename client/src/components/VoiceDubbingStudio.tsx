@@ -87,6 +87,7 @@ export function VoiceDubbingStudio({ onGenerate }: VoiceDubbingStudioProps) {
     if (!transcript.trim() || !targetLanguage) return;
 
     setIsGenerating(true);
+    setAudioError(null);
     try {
       const voiceType = usePremiumVoice ? "elevenlabs" : "google";
       if (onGenerate) {
@@ -138,6 +139,7 @@ export function VoiceDubbingStudio({ onGenerate }: VoiceDubbingStudioProps) {
     setAudioFile(null);
     setGeneratedAudioUrl(null);
     setTargetLanguage("");
+    setAudioError(null);
   };
 
   useEffect(() => {
@@ -316,23 +318,40 @@ export function VoiceDubbingStudio({ onGenerate }: VoiceDubbingStudioProps) {
         <CardContent className="space-y-6">
           {generatedAudioUrl ? (
             <>
-              <audio ref={audioRef} src={generatedAudioUrl} />
+              <audio 
+                ref={audioRef} 
+                src={generatedAudioUrl}
+                onError={() => setAudioError("Failed to load audio. The audio file may be unavailable.")}
+                onCanPlay={() => setAudioError(null)}
+              />
 
-              <div className="flex items-center justify-center">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="rounded-full w-20 h-20"
-                  onClick={togglePlayback}
-                  data-testid="button-playback"
-                >
-                  {isPlaying ? (
-                    <Pause className="w-8 h-8" />
-                  ) : (
-                    <Play className="w-8 h-8 ml-1" />
-                  )}
-                </Button>
-              </div>
+              {audioError ? (
+                <div className="flex flex-col items-center justify-center py-4 text-center">
+                  <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-3">
+                    <Volume2 className="w-6 h-6 text-destructive" />
+                  </div>
+                  <p className="text-sm text-destructive">{audioError}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Try generating the audio again
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="rounded-full w-20 h-20"
+                    onClick={togglePlayback}
+                    data-testid="button-playback"
+                  >
+                    {isPlaying ? (
+                      <Pause className="w-8 h-8" />
+                    ) : (
+                      <Play className="w-8 h-8 ml-1" />
+                    )}
+                  </Button>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">

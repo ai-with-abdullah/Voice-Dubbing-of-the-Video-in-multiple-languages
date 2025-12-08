@@ -59,6 +59,7 @@ export function VideoPlayer({
   const [currentSubtitle, setCurrentSubtitle] = useState<Subtitle | null>(null);
   const [highlightedWordIndex, setHighlightedWordIndex] = useState(-1);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [videoError, setVideoError] = useState<string | null>(null);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -175,8 +176,19 @@ export function VideoPlayer({
           src={videoUrl}
           className="w-full h-full object-contain"
           onClick={togglePlay}
+          onError={() => setVideoError("Failed to load video. The video file may be unavailable.")}
+          onCanPlay={() => setVideoError(null)}
           data-testid="video-player"
         />
+
+        {videoError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+            <div className="text-center text-white p-4">
+              <Volume2 className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">{videoError}</p>
+            </div>
+          </div>
+        )}
 
         {currentSubtitle && (
           <motion.div
