@@ -6,88 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import {
-  Newspaper,
-  Clock,
-  ArrowRight,
-  Sparkles,
-  Globe,
-  Mic2,
-  Video,
-  TrendingUp,
-  Users,
-} from "lucide-react";
-
-const blogPosts = [
-  {
-    id: 1,
-    title: "The Future of AI Voice Dubbing: What to Expect in 2025",
-    excerpt: "Discover how artificial intelligence is revolutionizing video content localization and what advancements we can expect in the coming year.",
-    category: "Industry Trends",
-    readTime: "5 min read",
-    date: "Dec 5, 2024",
-    icon: TrendingUp,
-    featured: true,
-  },
-  {
-    id: 2,
-    title: "How Content Creators Are Reaching Global Audiences",
-    excerpt: "Learn how YouTubers, educators, and businesses are using AI dubbing to expand their reach to international markets.",
-    category: "Success Stories",
-    readTime: "4 min read",
-    date: "Dec 3, 2024",
-    icon: Users,
-    featured: true,
-  },
-  {
-    id: 3,
-    title: "Getting Started with Voice Cloning Technology",
-    excerpt: "A comprehensive guide to understanding and using voice cloning for natural-sounding translations that preserve speaker identity.",
-    category: "Tutorials",
-    readTime: "6 min read",
-    date: "Nov 28, 2024",
-    icon: Mic2,
-    featured: false,
-  },
-  {
-    id: 4,
-    title: "Breaking Language Barriers in Education",
-    excerpt: "How educational institutions are using AI dubbing to make learning materials accessible to students worldwide.",
-    category: "Use Cases",
-    readTime: "4 min read",
-    date: "Nov 25, 2024",
-    icon: Globe,
-    featured: false,
-  },
-  {
-    id: 5,
-    title: "Best Practices for Video Localization",
-    excerpt: "Tips and strategies for creating high-quality dubbed content that resonates with international audiences.",
-    category: "Tutorials",
-    readTime: "7 min read",
-    date: "Nov 20, 2024",
-    icon: Video,
-    featured: false,
-  },
-  {
-    id: 6,
-    title: "Introducing Word-Level Subtitle Synchronization",
-    excerpt: "Our latest feature brings pixel-perfect subtitle timing with word-by-word accuracy for the best viewing experience.",
-    category: "Product Updates",
-    readTime: "3 min read",
-    date: "Nov 15, 2024",
-    icon: Sparkles,
-    featured: false,
-  },
-];
-
-const categories = [
-  { name: "All Posts", count: blogPosts.length },
-  { name: "Tutorials", count: blogPosts.filter(p => p.category === "Tutorials").length },
-  { name: "Product Updates", count: blogPosts.filter(p => p.category === "Product Updates").length },
-  { name: "Industry Trends", count: blogPosts.filter(p => p.category === "Industry Trends").length },
-  { name: "Use Cases", count: blogPosts.filter(p => p.category === "Use Cases").length },
-];
+import { Newspaper, Clock, ArrowRight } from "lucide-react";
+import { blogPosts, categories } from "@/data/blogPosts";
 
 export default function Blog() {
   const featuredPosts = blogPosts.filter(post => post.featured);
@@ -149,31 +69,33 @@ export default function Blog() {
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   viewport={{ once: true }}
                 >
-                  <Card className="h-full hover-elevate cursor-pointer" data-testid={`card-blog-featured-${post.id}`}>
-                    <CardHeader>
-                      <div className="flex items-center gap-2 mb-3">
-                        <Badge variant="secondary" className="gap-1">
-                          <post.icon className="w-3 h-3" />
-                          {post.category}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {post.readTime}
-                        </span>
-                      </div>
-                      <CardTitle className="text-xl leading-tight">{post.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground mb-4">{post.excerpt}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">{post.date}</span>
-                        <Button variant="ghost" size="sm" className="gap-1" data-testid={`button-read-more-${post.id}`}>
-                          Read More
-                          <ArrowRight className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <Link href={`/blog/${post.slug}`}>
+                    <Card className="h-full hover-elevate cursor-pointer" data-testid={`card-blog-featured-${post.id}`}>
+                      <CardHeader>
+                        <div className="flex items-center gap-2 mb-3">
+                          <Badge variant="secondary" className="gap-1">
+                            <post.icon className="w-3 h-3" />
+                            {post.category}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {post.readTime}
+                          </span>
+                        </div>
+                        <CardTitle className="text-xl leading-tight">{post.title}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-muted-foreground mb-4">{post.excerpt}</p>
+                        <div className="flex items-center justify-between gap-4">
+                          <span className="text-sm text-muted-foreground">{post.date}</span>
+                          <Button variant="ghost" size="sm" className="gap-1" data-testid={`button-read-more-${post.id}`}>
+                            Read More
+                            <ArrowRight className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 </motion.div>
               ))}
             </div>
@@ -188,26 +110,28 @@ export default function Blog() {
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   viewport={{ once: true }}
                 >
-                  <Card className="h-full hover-elevate cursor-pointer" data-testid={`card-blog-${post.id}`}>
-                    <CardHeader>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="outline" className="text-xs">
-                          {post.category}
-                        </Badge>
-                      </div>
-                      <CardTitle className="text-lg leading-tight">{post.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{post.excerpt}</p>
-                      <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <span>{post.date}</span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {post.readTime}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <Link href={`/blog/${post.slug}`}>
+                    <Card className="h-full hover-elevate cursor-pointer" data-testid={`card-blog-${post.id}`}>
+                      <CardHeader>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="outline" className="text-xs">
+                            {post.category}
+                          </Badge>
+                        </div>
+                        <CardTitle className="text-lg leading-tight">{post.title}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{post.excerpt}</p>
+                        <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+                          <span>{post.date}</span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {post.readTime}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 </motion.div>
               ))}
             </div>

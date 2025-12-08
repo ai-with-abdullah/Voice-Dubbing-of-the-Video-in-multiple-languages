@@ -15,6 +15,7 @@ import ForgotPassword from "@/pages/forgot-password";
 import Checkout from "@/pages/checkout";
 import Docs from "@/pages/docs";
 import Blog from "@/pages/blog";
+import BlogPost from "@/pages/blog-post";
 import Support from "@/pages/support";
 import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
@@ -36,6 +37,7 @@ function Router() {
       <Route path="/checkout" component={Checkout} />
       <Route path="/docs" component={Docs} />
       <Route path="/blog" component={Blog} />
+      <Route path="/blog/:slug" component={BlogPost} />
       <Route path="/support" component={Support} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/terms" component={Terms} />
