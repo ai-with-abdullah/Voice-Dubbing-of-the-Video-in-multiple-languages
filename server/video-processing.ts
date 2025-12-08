@@ -227,7 +227,7 @@ async function downloadYouTubeVideo(
   url: string
 ): Promise<{ success: boolean; videoPath?: string; error?: string }> {
   try {
-    const ytdl = await import("ytdl-core");
+    const ytdl = await import("@distube/ytdl-core");
     
     const videoId = extractYouTubeVideoId(url);
     if (!videoId) {
