@@ -10,7 +10,8 @@ import {
   translateText, 
   generateSpeechWithGoogle, 
   detectLanguage, 
-  isGoogleConfigured 
+  isGoogleConfigured,
+  getYouTubeCaptions
 } from "./google";
 import {
   insertVideoConversionSchema,
@@ -330,14 +331,40 @@ export async function registerRoutes(
         progress: 10 
       });
 
-      const sampleText = data.sampleText || "Hello, this is a sample text for voice dubbing demonstration. This video has been converted to a new language using AI technology.";
+      let transcript = "";
+      let detectedSourceLanguage = data.sourceLanguage || "en";
+
+      const platform = data.platform || detectPlatform(data.originalUrl);
+      
+      if (platform === "youtube" && data.originalUrl) {
+        const videoId = extractYouTubeVideoId(data.originalUrl);
+        if (videoId) {
+          console.log(`Fetching captions for YouTube video: ${videoId}`);
+          const captionsResult = await getYouTubeCaptions(videoId);
+          
+          if (captionsResult.success && captionsResult.captions) {
+            transcript = captionsResult.captions;
+            if (captionsResult.language) {
+              detectedSourceLanguage = captionsResult.language;
+            }
+            console.log(`Successfully fetched ${transcript.length} characters of captions in ${detectedSourceLanguage}`);
+          } else {
+            console.log(`Could not fetch captions: ${captionsResult.error}`);
+          }
+        }
+      }
+
+      if (!transcript || transcript.length < 10) {
+        transcript = data.sampleText || "Hello, this is a sample text for voice dubbing demonstration. This video has been converted to a new language using AI technology. We apologize that captions were not available for this video.";
+        console.log("Using fallback sample text - no captions available");
+      }
       
       await storage.updateVideoConversion(conversionId, { 
         progress: 30,
-        transcript: sampleText,
+        transcript: transcript,
       });
 
-      const translationResult = await translateText(sampleText, data.targetLanguage);
+      const translationResult = await translateText(transcript, data.targetLanguage, detectedSourceLanguage);
       
       if (!translationResult.success) {
         await storage.updateVideoConversion(conversionId, { 

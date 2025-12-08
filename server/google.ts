@@ -3,6 +3,141 @@ import fs from "fs";
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
+export async function getYouTubeCaptions(videoId: string): Promise<{ success: boolean; captions?: string; language?: string; error?: string }> {
+  try {
+    const transcriptResult = await fetchYouTubeTranscript(videoId);
+    if (transcriptResult.success) {
+      return transcriptResult;
+    }
+    return { success: false, error: transcriptResult.error || "Captions not available - YouTube requires authentication for caption access" };
+  } catch (error) {
+    console.error("Error fetching YouTube captions:", error);
+    return { success: false, error: "Failed to fetch captions - YouTube restricts server-side access" };
+  }
+}
+
+async function fetchYouTubeTranscript(videoId: string, lang: string = "en"): Promise<{ success: boolean; captions?: string; language?: string; error?: string }> {
+  try {
+    const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    const response = await fetch(watchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+      }
+    });
+
+    if (!response.ok) {
+      return { success: false, error: "Failed to fetch video page" };
+    }
+
+    const html = await response.text();
+    
+    const captionUrlMatch = html.match(/"captionTracks":\s*\[([^\]]+)\]/);
+    if (!captionUrlMatch) {
+      return { success: false, error: "No captions available for this video" };
+    }
+
+    try {
+      const captionData = JSON.parse(`[${captionUrlMatch[1]}]`);
+      
+      let captionTrack = captionData.find((track: any) => 
+        track.languageCode === lang || track.vssId?.includes(lang)
+      ) || captionData[0];
+
+      if (!captionTrack || !captionTrack.baseUrl) {
+        return { success: false, error: "No valid caption track found" };
+      }
+
+      let captionUrl = captionTrack.baseUrl;
+      captionUrl = captionUrl.split('\\u0026').join('&');
+      captionUrl = captionUrl.split('&amp;').join('&');
+      captionUrl = captionUrl.split('\u0026').join('&');
+      const captionResponse = await fetch(captionUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'text/xml, application/xml, */*',
+          'Accept-Language': 'en-US,en;q=0.9',
+        }
+      });
+      if (!captionResponse.ok) {
+        return { success: false, error: "Failed to download captions" };
+      }
+
+      const captionXml = await captionResponse.text();
+      
+      let captions = "";
+      
+      const textMatches = captionXml.match(/<text[^>]*>[^<]+<\/text>/g) || [];
+      if (textMatches.length > 0) {
+        captions = textMatches
+          .map(match => {
+            const textContent = match.replace(/<[^>]+>/g, '').trim();
+            return decodeHtmlEntities(textContent);
+          })
+          .filter(text => text.length > 0)
+          .join(' ');
+      }
+      
+      if (!captions || captions.length < 10) {
+        const bodyMatch = captionXml.match(/<body[^>]*>([\s\S]*?)<\/body>/);
+        if (bodyMatch) {
+          const innerText = bodyMatch[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+          captions = decodeHtmlEntities(innerText);
+        }
+      }
+      
+      if (!captions || captions.length < 10) {
+        const allText = captionXml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+        if (allText.length > 10) {
+          captions = decodeHtmlEntities(allText);
+        }
+      }
+
+      if (captions && captions.length > 10) {
+        console.log(`Extracted ${captions.length} characters of captions`);
+        return { 
+          success: true, 
+          captions, 
+          language: captionTrack.languageCode || lang 
+        };
+      }
+
+      return { success: false, error: "No caption text found in response" };
+    } catch (parseError) {
+      console.error("Error parsing caption data:", parseError);
+      return { success: false, error: "Failed to parse caption data" };
+    }
+  } catch (error) {
+    console.error("Error fetching YouTube transcript:", error);
+    return { success: false, error: "Failed to fetch transcript" };
+  }
+}
+
+function decodeHtmlEntities(text: string): string {
+  const entities: Record<string, string> = {
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#39;': "'",
+    '&apos;': "'",
+    '&#x27;': "'",
+    '&#x2F;': '/',
+    '&#32;': ' ',
+    '&nbsp;': ' ',
+  };
+  
+  let decoded = text;
+  for (const [entity, char] of Object.entries(entities)) {
+    decoded = decoded.replace(new RegExp(entity, 'g'), char);
+  }
+  
+  decoded = decoded.replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec));
+  decoded = decoded.replace(/&#x([0-9a-fA-F]+);/g, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
+  
+  return decoded;
+}
+
 export function isGoogleConfigured(): boolean {
   return !!GOOGLE_API_KEY;
 }
