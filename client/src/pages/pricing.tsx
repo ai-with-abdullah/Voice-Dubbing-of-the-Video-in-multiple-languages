@@ -38,7 +38,8 @@ export default function Pricing() {
       setLocation("/convert");
       return;
     }
-    setLocation(`/checkout?plan=${planId}&billing=${isAnnual ? "annual" : "monthly"}`);
+    // Use window.location for URLs with query parameters to ensure reliable navigation
+    window.location.href = `/checkout?plan=${planId}&billing=${isAnnual ? "annual" : "monthly"}`;
   };
 
   const getPrice = (plan: typeof pricingPlans[number]) => {
