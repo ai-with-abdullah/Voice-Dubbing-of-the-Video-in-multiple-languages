@@ -385,5 +385,123 @@ ElevenLabs supports 29+ languages including:
 
 ---
 
+## Payment Options Guide
+
+The app currently uses PayPal for payments. You can add additional payment methods for better user experience.
+
+### Available Payment Options Comparison
+
+| Feature | **PayPal** (Current) | **Stripe** (Recommended) | **Braintree** |
+|---------|---------------------|--------------------------|---------------|
+| Credit Card Payments | Yes (limited) | Yes (full support) | Yes |
+| Transaction Fees | ~2.9% + $0.30 | 2.9% + $0.30 | 2.9% + $0.30 |
+| Setup Difficulty | Easy | Medium | Medium |
+| Customization | Limited | Excellent | Good |
+| Apple Pay / Google Pay | Limited | Yes | Yes |
+| Subscriptions | Basic | Advanced | Good |
+| Monthly Fees | None | None | None |
+
+### Recommended: Add Stripe
+
+**Why Stripe is recommended:**
+- Direct credit card payments (users don't need PayPal account)
+- Professional, modern checkout experience
+- Excellent subscription support for Creator/Business plans
+- Apple Pay & Google Pay support
+- Built-in fraud protection
+- Most trusted payment processor for modern apps
+
+**Stripe Pros:**
+- No monthly fees - only pay when you get paid
+- Excellent documentation and developer experience
+- Works in 135+ countries
+- PCI compliant (secure by default)
+
+**Stripe Cons:**
+- Requires account verification (1-2 business days)
+- Slightly more complex initial setup than PayPal-only
+
+### Setting Up Stripe
+
+#### Step 1: Create Stripe Account
+1. Go to [Stripe Dashboard](https://dashboard.stripe.com/register)
+2. Create a free account
+3. Complete business verification (required for live payments)
+
+#### Step 2: Get Your API Keys
+1. In Stripe Dashboard, go to **Developers > API Keys**
+2. Copy your **Publishable key** (starts with `pk_test_` or `pk_live_`)
+3. Copy your **Secret key** (starts with `sk_test_` or `sk_live_`)
+
+**Important:** Use `pk_test_` and `sk_test_` keys for development/testing. Use `pk_live_` and `sk_live_` keys only for production.
+
+#### Step 3: Add to Environment Variables
+
+For local development, add to your `.env` file:
+```bash
+# Stripe API Keys
+STRIPE_SECRET_KEY=sk_test_your_secret_key_here
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key_here
+```
+
+For Replit deployment, add these in the Secrets tab.
+
+#### Step 4: Install Stripe Package (if not already installed)
+```bash
+npm install stripe @stripe/stripe-js @stripe/react-stripe-js
+```
+
+### Setting Up Multiple Payment Options (Best Practice)
+
+To offer both PayPal AND Stripe on the checkout page:
+
+1. Keep the existing PayPal integration
+2. Add Stripe as an additional option
+3. Let users choose their preferred payment method
+
+This maximizes conversions because:
+- Some users prefer PayPal (existing accounts, buyer protection)
+- Some users prefer credit cards (faster, no account needed)
+- Mobile users love Apple Pay / Google Pay (one-tap checkout)
+
+### Payment Method Recommendations by Use Case
+
+| Scenario | Recommended Setup |
+|----------|-------------------|
+| Quick MVP / Demo | PayPal only (current) |
+| Professional SaaS | Stripe + PayPal |
+| Mobile-focused app | Stripe (for Apple/Google Pay) |
+| Subscription business | Stripe (better subscription management) |
+| International users | Stripe + PayPal (covers most countries) |
+
+### Environment Variables Summary for Payments
+
+```bash
+# PayPal (Current)
+PAYPAL_CLIENT_ID=your_paypal_client_id
+PAYPAL_CLIENT_SECRET=your_paypal_client_secret
+
+# Stripe (Optional - Add for credit card payments)
+STRIPE_SECRET_KEY=sk_test_your_secret_key
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key
+
+# Use sandbox/test keys for development
+# Use live keys only for production deployment
+```
+
+### Test Card Numbers (Stripe Sandbox)
+
+When testing Stripe in development mode, use these test cards:
+
+| Card Number | Result |
+|-------------|--------|
+| 4242 4242 4242 4242 | Success |
+| 4000 0000 0000 0002 | Decline |
+| 4000 0000 0000 9995 | Insufficient funds |
+
+Use any future expiry date (e.g., 12/25) and any 3-digit CVC.
+
+---
+
 *Last Updated: December 2024*
 *Simplified for Expo Demo with ElevenLabs Only*
