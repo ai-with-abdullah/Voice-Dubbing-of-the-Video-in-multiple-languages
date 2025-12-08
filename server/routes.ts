@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import path from "path";
+import fs from "fs";
 import express from "express";
 import { storage } from "./storage";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
@@ -334,6 +335,8 @@ export async function registerRoutes(
   });
 
   async function processVideoConversion(conversionId: string, data: any) {
+    let downloadedVideoPath: string | null = null;
+    
     try {
       await storage.updateVideoConversion(conversionId, { 
         status: "processing", 
@@ -342,7 +345,6 @@ export async function registerRoutes(
 
       let transcript = "";
       let detectedSourceLanguage = data.sourceLanguage || "en";
-      let downloadedVideoPath: string | null = null;
 
       const platform = data.platform || detectPlatform(data.originalUrl);
       
@@ -395,7 +397,6 @@ export async function registerRoutes(
                 console.log(`Speech-to-text failed: ${sttResult.error}`);
               }
               
-              const fs = require("fs");
               try { fs.unlinkSync(audioResult.audioPath); } catch (e) {}
             }
           } else {
@@ -485,7 +486,6 @@ export async function registerRoutes(
         }
       }
 
-      const fs = require("fs");
       if (downloadedVideoPath) {
         try { fs.unlinkSync(downloadedVideoPath); } catch (e) {}
       }
@@ -504,7 +504,6 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error processing video conversion:", error);
       
-      const fs = require("fs");
       if (downloadedVideoPath) {
         try { fs.unlinkSync(downloadedVideoPath); } catch (e) {}
       }
