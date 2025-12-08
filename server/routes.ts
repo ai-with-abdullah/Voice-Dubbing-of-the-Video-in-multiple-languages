@@ -4,6 +4,7 @@ import path from "path";
 import express from "express";
 import { storage } from "./storage";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
+import { createPaymentIntent, getStripeConfig, isStripeConfigured } from "./stripe";
 import { generateSpeechWithElevenLabs, checkApiKeyValid } from "./elevenlabs";
 import {
   insertVideoConversionSchema,
@@ -171,6 +172,23 @@ export async function registerRoutes(
 
   app.post("/api/paypal/order/:orderID/capture", async (req, res) => {
     await capturePaypalOrder(req, res);
+  });
+
+  // Stripe payment routes
+  app.get("/api/stripe/config", async (req, res) => {
+    await getStripeConfig(req, res);
+  });
+
+  app.post("/api/stripe/create-payment-intent", async (req, res) => {
+    await createPaymentIntent(req, res);
+  });
+
+  // Payment methods status
+  app.get("/api/payment-methods", (req, res) => {
+    res.json({
+      paypal: true,
+      stripe: isStripeConfigured(),
+    });
   });
 
   if (!isExpoMode) {

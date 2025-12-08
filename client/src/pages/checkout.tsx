@@ -13,6 +13,9 @@ import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { pricingPlans, TRANSACTION_FEE_PERCENT } from "@shared/schema";
 import PayPalButton from "@/components/PayPalButton";
+import StripePaymentButton from "@/components/StripePaymentButton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SiPaypal } from "react-icons/si";
 
 export default function Checkout() {
   const [, setLocation] = useLocation();
@@ -247,18 +250,51 @@ export default function Checkout() {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 mb-2">
                       <CreditCard className="w-5 h-5 text-muted-foreground" />
-                      <span className="font-medium">Pay with PayPal</span>
+                      <span className="font-medium">Choose Payment Method</span>
                     </div>
                     
-                    <div className="p-4 border rounded-lg">
-                      <PayPalButton
-                        amount={totalAmount.toFixed(2)}
-                        currency="USD"
-                        intent="CAPTURE"
-                      />
-                    </div>
+                    <Tabs defaultValue="card" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="card" className="gap-2" data-testid="tab-card">
+                          <CreditCard className="w-4 h-4" />
+                          Credit Card
+                        </TabsTrigger>
+                        <TabsTrigger value="paypal" className="gap-2" data-testid="tab-paypal">
+                          <SiPaypal className="w-4 h-4" />
+                          PayPal
+                        </TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="card" className="mt-4">
+                        <div className="p-4 border rounded-lg space-y-3">
+                          <p className="text-sm text-muted-foreground mb-3">
+                            Pay securely with your credit or debit card
+                          </p>
+                          <StripePaymentButton
+                            planId={plan.id}
+                            isAnnual={isAnnual}
+                            onSuccess={() => {
+                              setLocation("/convert?subscribed=true");
+                            }}
+                          />
+                        </div>
+                      </TabsContent>
+                      
+                      <TabsContent value="paypal" className="mt-4">
+                        <div className="p-4 border rounded-lg">
+                          <p className="text-sm text-muted-foreground mb-3">
+                            Pay securely with your PayPal account
+                          </p>
+                          <PayPalButton
+                            amount={totalAmount.toFixed(2)}
+                            currency="USD"
+                            intent="CAPTURE"
+                          />
+                        </div>
+                      </TabsContent>
+                    </Tabs>
 
                     <p className="text-xs text-center text-muted-foreground">
                       By completing this purchase, you agree to our Terms of Service and Privacy Policy.

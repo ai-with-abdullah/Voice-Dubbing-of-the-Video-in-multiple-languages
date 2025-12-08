@@ -125,9 +125,23 @@ EXPO_MODE=true
 # SESSION SECRET (any random string)
 # ============================================
 SESSION_SECRET=expo-demo-secret-key-2024
+
+# ============================================
+# STRIPE PAYMENT (Optional - for credit card payments)
+# Get keys from: https://dashboard.stripe.com/apikeys
+# ============================================
+STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key_here
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key_here
+
+# ============================================
+# PAYPAL PAYMENT (Optional - for PayPal payments)
+# Get from: https://developer.paypal.com/
+# ============================================
+PAYPAL_CLIENT_ID=your_paypal_client_id_here
+PAYPAL_CLIENT_SECRET=your_paypal_client_secret_here
 ```
 
-**Replace `your_elevenlabs_api_key_here` with your actual ElevenLabs API key!**
+**Replace the placeholder values with your actual API keys!**
 
 ---
 
@@ -498,8 +512,113 @@ When testing Stripe in development mode, use these test cards:
 | 4242 4242 4242 4242 | Success |
 | 4000 0000 0000 0002 | Decline |
 | 4000 0000 0000 9995 | Insufficient funds |
+| 5555 5555 5555 4444 | Mastercard Success |
+| 3782 822463 10005 | Amex Success |
 
-Use any future expiry date (e.g., 12/25) and any 3-digit CVC.
+Use any future expiry date (e.g., 12/25) and any 3-digit CVC (or 4-digit for Amex).
+
+---
+
+## Complete Local Testing Guide for Payments
+
+### Testing Credit Card Payments (Stripe)
+
+1. **Get Stripe Test Keys:**
+   - Go to https://dashboard.stripe.com/register
+   - Create a free account (no credit card required for testing)
+   - Go to **Developers > API Keys**
+   - Copy your **test** keys (they start with `pk_test_` and `sk_test_`)
+
+2. **Add to .env file:**
+   ```bash
+   STRIPE_SECRET_KEY=sk_test_51ABC...your_key_here
+   VITE_STRIPE_PUBLISHABLE_KEY=pk_test_51ABC...your_key_here
+   ```
+
+3. **Restart the server:**
+   ```bash
+   # Stop the server (Ctrl+C)
+   npm run dev
+   ```
+
+4. **Test the payment:**
+   - Go to http://localhost:5000/pricing
+   - Click "Get Creator" or "Get Business"
+   - Click "Continue to Payment"
+   - Select "Credit Card" tab
+   - Click "Pay with Credit Card"
+   - Enter test card: `4242 4242 4242 4242`
+   - Enter any future date (e.g., `12/25`)
+   - Enter any CVC (e.g., `123`)
+   - Click "Pay Now"
+
+5. **Verify in Stripe Dashboard:**
+   - Go to https://dashboard.stripe.com/test/payments
+   - You should see your test payment
+
+### Testing PayPal Payments
+
+1. **Get PayPal Sandbox Credentials:**
+   - Go to https://developer.paypal.com/
+   - Create a developer account
+   - Go to **Apps & Credentials**
+   - Create a new app (Sandbox mode)
+   - Copy Client ID and Secret
+
+2. **Add to .env file:**
+   ```bash
+   PAYPAL_CLIENT_ID=your_sandbox_client_id
+   PAYPAL_CLIENT_SECRET=your_sandbox_client_secret
+   ```
+
+3. **Create Sandbox Buyer Account:**
+   - In PayPal Developer, go to **Sandbox > Accounts**
+   - Create a "Personal" sandbox account
+   - Note the email and password
+
+4. **Test the payment:**
+   - Go to checkout page
+   - Select "PayPal" tab
+   - Click the PayPal button
+   - Log in with your sandbox buyer account
+   - Complete the payment
+
+---
+
+## Payment Methods Availability
+
+The checkout page now supports multiple payment methods:
+
+| Method | Description | When Available |
+|--------|-------------|----------------|
+| **Credit Card** | Direct card payments via Stripe | When `STRIPE_SECRET_KEY` is set |
+| **PayPal** | PayPal account payments | When `PAYPAL_CLIENT_ID` is set |
+
+If Stripe is not configured, the Credit Card tab will show a message that card payments are unavailable.
+
+---
+
+## Troubleshooting Payments
+
+### "Stripe is not configured" Error
+- Check that both `STRIPE_SECRET_KEY` and `VITE_STRIPE_PUBLISHABLE_KEY` are in your `.env` file
+- Make sure you're using test keys (starting with `pk_test_` and `sk_test_`)
+- Restart the server after changing `.env`
+
+### "Payment failed" Error
+- Check browser console for detailed error (F12 > Console)
+- Verify your Stripe keys are correct
+- Make sure you're using valid test card numbers
+
+### PayPal Button Not Appearing
+- Check that `PAYPAL_CLIENT_ID` is set in `.env`
+- Restart the server after changing `.env`
+- Check browser console for errors
+
+### Card Payment Form Not Loading
+- Check that `VITE_STRIPE_PUBLISHABLE_KEY` starts with `pk_test_` or `pk_live_`
+- Verify the key is correctly formatted (no extra spaces)
+- Check browser console for loading errors
 
 ---
 
