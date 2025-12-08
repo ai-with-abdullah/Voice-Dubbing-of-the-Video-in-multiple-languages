@@ -11,8 +11,17 @@ import {
   generateSpeechWithGoogle, 
   detectLanguage, 
   isGoogleConfigured,
-  getYouTubeCaptions
+  getYouTubeCaptions,
+  speechToText,
+  speechToTextLongAudio
 } from "./google";
+import {
+  extractAudioFromVideo,
+  mergeAudioWithVideo,
+  downloadVideoFromUrl,
+  convertAudioFormat,
+  cleanupTempFiles
+} from "./video-processing";
 import {
   insertVideoConversionSchema,
   insertVoiceDubbingSchema,
@@ -328,11 +337,12 @@ export async function registerRoutes(
     try {
       await storage.updateVideoConversion(conversionId, { 
         status: "processing", 
-        progress: 10 
+        progress: 5 
       });
 
       let transcript = "";
       let detectedSourceLanguage = data.sourceLanguage || "en";
+      let downloadedVideoPath: string | null = null;
 
       const platform = data.platform || detectPlatform(data.originalUrl);
       
@@ -354,9 +364,49 @@ export async function registerRoutes(
         }
       }
 
+      await storage.updateVideoConversion(conversionId, { progress: 15 });
+
+      if (!transcript || transcript.length < 10) {
+        console.log("No captions available, attempting speech-to-text transcription...");
+        
+        if (platform === "youtube" && data.originalUrl) {
+          console.log("Downloading YouTube video for audio extraction...");
+          const downloadResult = await downloadVideoFromUrl(data.originalUrl, "youtube");
+          
+          if (downloadResult.success && downloadResult.videoPath) {
+            downloadedVideoPath = downloadResult.videoPath;
+            console.log(`Video downloaded to: ${downloadedVideoPath}`);
+            
+            await storage.updateVideoConversion(conversionId, { progress: 25 });
+            
+            const audioResult = await extractAudioFromVideo(downloadedVideoPath, "wav");
+            
+            if (audioResult.success && audioResult.audioPath) {
+              console.log(`Audio extracted to: ${audioResult.audioPath}`);
+              
+              await storage.updateVideoConversion(conversionId, { progress: 35 });
+              
+              const sttResult = await speechToTextLongAudio(audioResult.audioPath, detectedSourceLanguage);
+              
+              if (sttResult.success && sttResult.transcript) {
+                transcript = sttResult.transcript;
+                console.log(`Speech-to-text successful: ${transcript.length} characters`);
+              } else {
+                console.log(`Speech-to-text failed: ${sttResult.error}`);
+              }
+              
+              const fs = require("fs");
+              try { fs.unlinkSync(audioResult.audioPath); } catch (e) {}
+            }
+          } else {
+            console.log(`Video download failed: ${downloadResult.error}`);
+          }
+        }
+      }
+
       if (!transcript || transcript.length < 10) {
         transcript = data.sampleText || "Hello, this is a sample text for voice dubbing demonstration. This video has been converted to a new language using AI technology. We apologize that captions were not available for this video.";
-        console.log("Using fallback sample text - no captions available");
+        console.log("Using fallback sample text - no captions or transcription available");
       }
       
       await storage.updateVideoConversion(conversionId, { 
@@ -405,24 +455,61 @@ export async function registerRoutes(
       }
 
       await storage.updateVideoConversion(conversionId, { 
-        progress: 90,
+        progress: 80,
         outputAudioUrl: audioResult.audioUrl,
       });
 
       const subtitlesSrt = generateSRT(translationResult.translatedText!, data.targetLanguage);
       const subtitlesVtt = generateVTT(translationResult.translatedText!, data.targetLanguage);
 
+      let finalVideoUrl = data.originalUrl;
+      
+      if (downloadedVideoPath && audioResult.audioUrl) {
+        console.log("Merging dubbed audio with video...");
+        await storage.updateVideoConversion(conversionId, { progress: 90 });
+        
+        const audioFilePath = path.join(process.cwd(), "public", audioResult.audioUrl.replace(/^\//, ""));
+        
+        const mergeResult = await mergeAudioWithVideo(
+          downloadedVideoPath,
+          audioFilePath,
+          data.mixOriginalAudio || false,
+          0.2
+        );
+        
+        if (mergeResult.success && mergeResult.outputUrl) {
+          finalVideoUrl = mergeResult.outputUrl;
+          console.log(`Video merged successfully: ${finalVideoUrl}`);
+        } else {
+          console.log(`Video merge failed: ${mergeResult.error}, using original URL`);
+        }
+      }
+
+      const fs = require("fs");
+      if (downloadedVideoPath) {
+        try { fs.unlinkSync(downloadedVideoPath); } catch (e) {}
+      }
+      
+      cleanupTempFiles(3600000);
+
       await storage.updateVideoConversion(conversionId, { 
         status: "completed",
         progress: 100,
         subtitlesSrt,
         subtitlesVtt,
-        outputVideoUrl: data.originalUrl,
+        outputVideoUrl: finalVideoUrl,
       });
 
       console.log(`Conversion ${conversionId} completed successfully`);
     } catch (error) {
       console.error("Error processing video conversion:", error);
+      
+      const fs = require("fs");
+      if (downloadedVideoPath) {
+        try { fs.unlinkSync(downloadedVideoPath); } catch (e) {}
+      }
+      cleanupTempFiles(3600000);
+      
       await storage.updateVideoConversion(conversionId, { 
         status: "failed",
         progress: 0,

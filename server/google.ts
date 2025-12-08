@@ -3,6 +3,238 @@ import fs from "fs";
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
+export async function speechToText(
+  audioPath: string,
+  languageCode: string = "en-US"
+): Promise<{ success: boolean; transcript?: string; confidence?: number; error?: string }> {
+  if (!GOOGLE_API_KEY) {
+    return { success: false, error: "Google API key not configured" };
+  }
+
+  try {
+    if (!fs.existsSync(audioPath)) {
+      return { success: false, error: "Audio file not found" };
+    }
+
+    const audioBytes = fs.readFileSync(audioPath);
+    const audioContent = audioBytes.toString("base64");
+
+    const url = `https://speech.googleapis.com/v1/speech:recognize?key=${GOOGLE_API_KEY}`;
+
+    const encoding = getAudioEncoding(audioPath);
+    const sampleRateHertz = 16000;
+
+    const body = {
+      config: {
+        encoding: encoding,
+        sampleRateHertz: sampleRateHertz,
+        languageCode: normalizeLanguageCode(languageCode),
+        enableAutomaticPunctuation: true,
+        model: "default",
+      },
+      audio: {
+        content: audioContent,
+      },
+    };
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("Speech-to-Text API error:", error);
+      return { success: false, error: `Speech-to-Text failed: ${response.status}` };
+    }
+
+    const data = await response.json();
+    
+    if (!data.results || data.results.length === 0) {
+      return { success: false, error: "No speech detected in audio" };
+    }
+
+    const transcript = data.results
+      .map((result: any) => result.alternatives?.[0]?.transcript || "")
+      .join(" ")
+      .trim();
+
+    const confidence = data.results[0]?.alternatives?.[0]?.confidence || 0;
+
+    if (!transcript) {
+      return { success: false, error: "No transcript generated" };
+    }
+
+    return { success: true, transcript, confidence };
+  } catch (error) {
+    console.error("Speech-to-Text error:", error);
+    return { success: false, error: "Speech-to-Text request failed" };
+  }
+}
+
+export async function speechToTextLongAudio(
+  audioPath: string,
+  languageCode: string = "en-US"
+): Promise<{ success: boolean; transcript?: string; error?: string }> {
+  if (!GOOGLE_API_KEY) {
+    return { success: false, error: "Google API key not configured" };
+  }
+
+  try {
+    if (!fs.existsSync(audioPath)) {
+      return { success: false, error: "Audio file not found" };
+    }
+
+    const chunkDurationMs = 55000;
+    const chunks = await splitAudioIntoChunks(audioPath, chunkDurationMs);
+    
+    if (chunks.length === 0) {
+      return speechToText(audioPath, languageCode);
+    }
+
+    console.log(`Processing ${chunks.length} audio chunks for transcription...`);
+    let fullTranscript = "";
+    
+    for (let i = 0; i < chunks.length; i++) {
+      const chunkPath = chunks[i];
+      console.log(`Transcribing chunk ${i + 1}/${chunks.length}...`);
+      
+      const result = await speechToText(chunkPath, languageCode);
+      if (result.success && result.transcript) {
+        fullTranscript += " " + result.transcript;
+      }
+      
+      try {
+        fs.unlinkSync(chunkPath);
+      } catch (e) {}
+    }
+
+    if (!fullTranscript.trim()) {
+      return { success: false, error: "No speech detected in audio" };
+    }
+
+    return { success: true, transcript: fullTranscript.trim() };
+  } catch (error) {
+    console.error("Long audio transcription error:", error);
+    return { success: false, error: "Long audio transcription failed" };
+  }
+}
+
+async function splitAudioIntoChunks(audioPath: string, chunkDurationMs: number): Promise<string[]> {
+  const { spawn } = await import("child_process");
+  
+  return new Promise((resolve) => {
+    const ffprobe = spawn("ffprobe", [
+      "-v", "error",
+      "-show_entries", "format=duration",
+      "-of", "default=noprint_wrappers=1:nokey=1",
+      audioPath
+    ]);
+    
+    let stdout = "";
+    
+    ffprobe.stdout.on("data", (data) => {
+      stdout += data.toString();
+    });
+    
+    ffprobe.on("close", async (code) => {
+      if (code !== 0) {
+        resolve([]);
+        return;
+      }
+      
+      const duration = parseFloat(stdout.trim()) * 1000;
+      
+      if (duration <= chunkDurationMs) {
+        resolve([]);
+        return;
+      }
+      
+      const numChunks = Math.ceil(duration / chunkDurationMs);
+      const chunkPaths: string[] = [];
+      const tempDir = path.dirname(audioPath);
+      
+      for (let i = 0; i < numChunks; i++) {
+        const startTime = (i * chunkDurationMs) / 1000;
+        const chunkPath = path.join(tempDir, `chunk_${i}_${Date.now()}.wav`);
+        
+        await new Promise<void>((resolveChunk) => {
+          const ffmpeg = spawn("ffmpeg", [
+            "-i", audioPath,
+            "-ss", startTime.toString(),
+            "-t", (chunkDurationMs / 1000).toString(),
+            "-ar", "16000",
+            "-ac", "1",
+            "-y",
+            chunkPath
+          ]);
+          
+          ffmpeg.on("close", () => {
+            const fs = require("fs");
+            if (fs.existsSync(chunkPath)) {
+              chunkPaths.push(chunkPath);
+            }
+            resolveChunk();
+          });
+          
+          ffmpeg.on("error", () => resolveChunk());
+        });
+      }
+      
+      resolve(chunkPaths);
+    });
+    
+    ffprobe.on("error", () => resolve([]));
+  });
+}
+
+function getAudioEncoding(audioPath: string): string {
+  const ext = path.extname(audioPath).toLowerCase();
+  
+  const encodingMap: Record<string, string> = {
+    ".wav": "LINEAR16",
+    ".flac": "FLAC",
+    ".mp3": "MP3",
+    ".ogg": "OGG_OPUS",
+    ".webm": "WEBM_OPUS",
+    ".amr": "AMR",
+  };
+  
+  return encodingMap[ext] || "LINEAR16";
+}
+
+function normalizeLanguageCode(code: string): string {
+  const languageMap: Record<string, string> = {
+    "en": "en-US",
+    "es": "es-ES",
+    "fr": "fr-FR",
+    "de": "de-DE",
+    "it": "it-IT",
+    "pt": "pt-BR",
+    "ja": "ja-JP",
+    "ko": "ko-KR",
+    "zh": "zh-CN",
+    "ar": "ar-SA",
+    "hi": "hi-IN",
+    "ru": "ru-RU",
+    "nl": "nl-NL",
+    "pl": "pl-PL",
+    "tr": "tr-TR",
+    "vi": "vi-VN",
+    "th": "th-TH",
+    "id": "id-ID",
+  };
+  
+  if (code.includes("-")) {
+    return code;
+  }
+  
+  return languageMap[code.toLowerCase()] || `${code}-${code.toUpperCase()}`;
+}
+
 export async function getYouTubeCaptions(videoId: string): Promise<{ success: boolean; captions?: string; language?: string; error?: string }> {
   try {
     const transcriptResult = await fetchYouTubeTranscript(videoId);
