@@ -17,8 +17,17 @@ const navItems = [
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { isOpen, openPricing, closePricing } = usePricingStore();
+
+  const handleSelectPlan = (planId: string, isAnnual: boolean) => {
+    closePricing();
+    if (planId === "free") {
+      setLocation("/convert");
+    } else {
+      setLocation(`/checkout?plan=${planId}&billing=${isAnnual ? "annual" : "monthly"}`);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-lg">
@@ -135,7 +144,7 @@ export function Header() {
         )}
       </div>
       
-      <PricingDialog open={isOpen} onOpenChange={closePricing} />
+      <PricingDialog open={isOpen} onOpenChange={closePricing} onSelectPlan={handleSelectPlan} />
     </header>
   );
 }
