@@ -226,49 +226,50 @@ export async function downloadVideoFromUrl(
 async function downloadYouTubeVideo(
   url: string
 ): Promise<{ success: boolean; videoPath?: string; error?: string }> {
-  try {
-    const ytdl = await import("@distube/ytdl-core");
-    
-    const videoId = extractYouTubeVideoId(url);
-    if (!videoId) {
-      return { success: false, error: "Invalid YouTube URL" };
-    }
-    
-    const filename = `youtube_${videoId}_${Date.now()}.mp4`;
-    const outputPath = path.join(TEMP_DIR, filename);
-    
-    return new Promise((resolve) => {
-      const video = ytdl.default(url, {
-        quality: "highest",
-        filter: "audioandvideo"
-      });
-      
-      const writeStream = fs.createWriteStream(outputPath);
-      
-      video.pipe(writeStream);
-      
-      video.on("error", (err: Error) => {
-        console.error("ytdl error:", err);
-        resolve({ success: false, error: err.message });
-      });
-      
-      writeStream.on("finish", () => {
-        if (fs.existsSync(outputPath)) {
-          resolve({ success: true, videoPath: outputPath });
-        } else {
-          resolve({ success: false, error: "Download failed - file not created" });
-        }
-      });
-      
-      writeStream.on("error", (err) => {
-        console.error("Write stream error:", err);
-        resolve({ success: false, error: err.message });
-      });
-    });
-  } catch (error) {
-    console.error("YouTube download error:", error);
-    return { success: false, error: "Failed to download YouTube video" };
+  const videoId = extractYouTubeVideoId(url);
+  if (!videoId) {
+    return { success: false, error: "Invalid YouTube URL" };
   }
+  
+  const filename = `youtube_${videoId}_${Date.now()}.mp4`;
+  const outputPath = path.join(TEMP_DIR, filename);
+  
+  return new Promise((resolve) => {
+    console.log(`Downloading YouTube video with yt-dlp: ${url}`);
+    
+    const ytdlp = spawn("yt-dlp", [
+      "-f", "best[ext=mp4]/best",
+      "-o", outputPath,
+      "--no-playlist",
+      "--no-warnings",
+      url
+    ]);
+    
+    let stderr = "";
+    
+    ytdlp.stdout.on("data", (data) => {
+      console.log(`yt-dlp: ${data.toString().trim()}`);
+    });
+    
+    ytdlp.stderr.on("data", (data) => {
+      stderr += data.toString();
+    });
+    
+    ytdlp.on("close", (code) => {
+      if (code === 0 && fs.existsSync(outputPath)) {
+        console.log(`YouTube video downloaded successfully: ${outputPath}`);
+        resolve({ success: true, videoPath: outputPath });
+      } else {
+        console.error("yt-dlp error:", stderr);
+        resolve({ success: false, error: `yt-dlp failed with code ${code}: ${stderr}` });
+      }
+    });
+    
+    ytdlp.on("error", (err) => {
+      console.error("yt-dlp spawn error:", err);
+      resolve({ success: false, error: err.message });
+    });
+  });
 }
 
 function extractYouTubeVideoId(url: string): string | null {
